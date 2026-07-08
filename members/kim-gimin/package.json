@@ -1,0 +1,20 @@
+{
+  "name": "@cotato/member-kim-gimin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./feature-manifest": "./feature-manifest.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "oxlint feature-manifest.ts"
+  },
+  "dependencies": {
+    "@cotato/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2"
+  }
+}

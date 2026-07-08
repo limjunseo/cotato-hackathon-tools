@@ -1,0 +1,23 @@
+{
+  "name": "@cotato/ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "oxlint src"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@cotato/contracts": "workspace:*",
+    "@types/react": "^19.2.17",
+    "oxlint": "^1.71.0",
+    "react": "^19.2.7",
+    "typescript": "~6.0.2"
+  }
+}

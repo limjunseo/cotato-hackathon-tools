@@ -1,0 +1,114 @@
+.cotato-feature-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(60px, 1fr) auto;
+  min-height: 310px;
+  padding: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  color: #f7f3e8;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--feature-accent) 18%, transparent), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.cotato-feature-card:hover {
+  transform: translateY(-5px);
+  border-color: color-mix(in srgb, var(--feature-accent) 60%, transparent);
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.32);
+}
+
+.cotato-feature-card::after {
+  position: absolute;
+  right: -35px;
+  bottom: -55px;
+  width: 150px;
+  height: 150px;
+  border: 1px solid color-mix(in srgb, var(--feature-accent) 28%, transparent);
+  border-radius: 50%;
+  content: '';
+}
+
+.cotato-feature-card__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cotato-feature-status,
+.cotato-feature-owner {
+  font: 800 9px/1 ui-monospace, monospace;
+  letter-spacing: 0.14em;
+}
+
+.cotato-feature-status {
+  padding: 6px 7px;
+  border: 1px solid color-mix(in srgb, var(--feature-accent) 45%, transparent);
+  border-radius: 5px;
+  color: var(--feature-accent);
+  background: color-mix(in srgb, var(--feature-accent) 8%, transparent);
+}
+
+.cotato-feature-owner {
+  color: #77736c;
+}
+
+.cotato-feature-symbol {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  margin: 30px 0 18px;
+  transform: rotate(45deg);
+}
+
+.cotato-feature-symbol i {
+  position: absolute;
+  width: 17px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--feature-accent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--feature-accent) 55%, transparent);
+}
+
+.cotato-feature-symbol i:nth-child(1) { top: 2px; left: 0; }
+.cotato-feature-symbol i:nth-child(2) { top: 2px; right: 0; transform: rotate(90deg); }
+.cotato-feature-symbol i:nth-child(3) { right: 0; bottom: 2px; }
+.cotato-feature-symbol i:nth-child(4) { bottom: 2px; left: 0; transform: rotate(90deg); }
+
+.cotato-feature-card h3 {
+  margin: 0;
+  font-size: 25px;
+  letter-spacing: -0.055em;
+}
+
+.cotato-feature-card p {
+  margin: 10px 0 24px;
+  color: #928e86;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.cotato-feature-card button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--feature-accent) 40%, transparent);
+  border-radius: 9px;
+  color: #f7f3e8;
+  background: color-mix(in srgb, var(--feature-accent) 10%, rgba(0, 0, 0, 0.35));
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.cotato-feature-card button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}

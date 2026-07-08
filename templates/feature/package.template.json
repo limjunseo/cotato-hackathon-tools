@@ -1,0 +1,21 @@
+{
+  "name": "@cotato/FEATURE_ID",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/App.tsx",
+    "./manifest": "./src/feature.ts"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "lint": "oxlint"
+  },
+  "dependencies": {
+    "@cotato/contracts": "workspace:*",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "cotato-hackathon-tools",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "dev": "pnpm --filter @cotato/portal dev",
+    "dev:timer": "pnpm --filter @cotato/hackathon-timer dev",
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "lint": "pnpm -r --if-present lint",
+    "check": "pnpm lint && pnpm test && pnpm build"
+  }
+}
