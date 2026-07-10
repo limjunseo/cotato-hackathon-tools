@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { getTeamChange } from '../lib/presentation'
+import { getRaceProgress, getTeamChange } from '../lib/presentation'
 import type { MergeBatch, PresentationPhase, TeamScore } from '../types'
 import { PotatoRacer } from './PotatoRacer'
 
@@ -10,28 +10,23 @@ type RaceBoardProps = {
 }
 
 type LaneStyle = CSSProperties & {
-  '--camera-x': string
   '--distance-x': string
   '--team-color': string
 }
 
 export function RaceBoard({ batch, phase, teams }: RaceBoardProps) {
-  const leaderDistance = Math.max(0, ...teams.map((team) => team.total * 74))
-  const cameraOffset = Math.max(0, leaderDistance - 590)
-
   return (
     <section className={`race-board race-board--${phase}`} aria-label="6개 팀 Merge Race">
       <header className="race-board__header">
         <span>TEAM LANES · FIXED ORDER</span>
-        <span>1 MERGE = 1 BOOST UNIT</span>
+        <span>1 COMMIT = 1 BOOST UNIT</span>
       </header>
 
       <div className="race-lanes">
         {teams.map((team) => {
           const boost = getTeamChange(batch, team.teamId)
           const style: LaneStyle = {
-            '--camera-x': `${cameraOffset}px`,
-            '--distance-x': `${team.total * 74}px`,
+            '--distance-x': `${getRaceProgress(team.total).toFixed(2)}%`,
             '--team-color': team.color,
           }
 
@@ -60,7 +55,7 @@ export function RaceBoard({ batch, phase, teams }: RaceBoardProps) {
 
               <div className="race-lane__score">
                 <strong>{String(team.total).padStart(2, '0')}</strong>
-                <span>깃허브 머지 횟수</span>
+                <span>깃허브 커밋 횟수</span>
                 <small>C {team.client} · S {team.server}</small>
               </div>
             </article>

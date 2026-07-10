@@ -44,6 +44,7 @@ export function selectValidMerges(
 
       return [{
         baseRefName: pullRequest.baseRefName,
+        commitCount: pullRequest.commitCount,
         id: mergeKey,
         mergedAt: pullRequest.mergedAt,
         prNumber: pullRequest.number,
@@ -70,8 +71,8 @@ export function calculateScores(merges: Array<ValidMerge | MergeEvent>): TeamSco
       return
     }
 
-    score[merge.repositoryType] += 1
-    score.total += 1
+    score[merge.repositoryType] += merge.commitCount
+    score.total += merge.commitCount
   })
 
   return scores

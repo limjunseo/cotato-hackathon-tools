@@ -25,7 +25,7 @@ function tone(
   oscillator.stop(startsAt + duration + 0.03)
 }
 
-export function playPresentationAudio(elapsedMs: number) {
+function createOutput() {
   const audioWindow = window as AudioWindow
   const AudioContextClass = window.AudioContext ?? audioWindow.webkitAudioContext
   if (!AudioContextClass) return null
@@ -36,6 +36,33 @@ export function playPresentationAudio(elapsedMs: number) {
   output.gain.value = 0.09
   output.connect(context.destination)
   void context.resume().catch(() => undefined)
+
+  return { context, output }
+}
+
+function stopOutput(context: AudioContext, output: GainNode) {
+  output.gain.setTargetAtTime(0.0001, context.currentTime, 0.04)
+  window.setTimeout(() => output.disconnect(), 160)
+}
+
+export function playMergeNotificationAudio() {
+  const audio = createOutput()
+  if (!audio) return null
+
+  const { context, output } = audio
+  const now = context.currentTime + 0.03
+  tone(context, output, 659.25, now, 0.13, 0.18, 'square')
+  tone(context, output, 880, now + 0.12, 0.16, 0.2, 'square')
+  tone(context, output, 1_046.5, now + 0.26, 0.24, 0.2, 'triangle')
+
+  return () => stopOutput(context, output)
+}
+
+export function playPresentationAudio(elapsedMs: number) {
+  const audio = createOutput()
+  if (!audio) return null
+
+  const { context, output } = audio
   const now = context.currentTime + 0.03
 
   if (elapsedMs < 1_200) {
@@ -56,7 +83,6 @@ export function playPresentationAudio(elapsedMs: number) {
   }
 
   return () => {
-    output.gain.setTargetAtTime(0.0001, context.currentTime, 0.04)
-    window.setTimeout(() => output.disconnect(), 160)
+    stopOutput(context, output)
   }
 }

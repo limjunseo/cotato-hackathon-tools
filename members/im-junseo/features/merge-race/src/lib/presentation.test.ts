@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { buildAnnouncement, createBatch, getPresentationPhase, getRankedTeams } from './presentation'
+import {
+  buildAnnouncement,
+  createBatch,
+  getPresentationPhase,
+  getRaceProgress,
+  getRankedTeams,
+} from './presentation'
 import type { MergeEvent, TeamScore } from '../types'
 
-function event(teamId: number, sequence: number): MergeEvent {
+function event(teamId: number, sequence: number, commitCount: number): MergeEvent {
   return {
     baseRefName: 'main',
+    commitCount,
     id: `repo-${teamId}#${sequence}`,
     mergedAt: '2026-07-11T00:00:00.000Z',
     prNumber: sequence,
@@ -19,12 +26,13 @@ function event(teamId: number, sequence: number): MergeEvent {
 
 describe('merge race presentation', () => {
   it('groups multiple events into one batch and announces the total', () => {
-    const batch = createBatch([event(2, 1), event(2, 2), event(5, 3)], 'batch-1')
+    const batch = createBatch([event(2, 1, 2), event(2, 2, 3), event(5, 3, 7)], 'batch-1')
 
     expect(batch.totalMerges).toBe(3)
+    expect(batch.totalCommits).toBe(12)
     expect(batch.teamChanges).toEqual([
-      { count: 2, teamId: 2, teamName: '2팀' },
-      { count: 1, teamId: 5, teamName: '5팀' },
+      { commitCount: 5, mergeCount: 2, teamId: 2, teamName: '2팀' },
+      { commitCount: 7, mergeCount: 1, teamId: 5, teamName: '5팀' },
     ])
     expect(buildAnnouncement(batch)).toBe('2팀, 5팀에서 총 3건 MERGE!')
   })
@@ -49,5 +57,12 @@ describe('merge race presentation', () => {
     expect(getRankedTeams(teams).map(({ rank, team }) => [rank, team.teamId])).toEqual([
       [1, 2], [1, 3], [3, 1], [4, 4],
     ])
+  })
+
+  it('keeps commit-based progress increasing and inside the visible track', () => {
+    expect(getRaceProgress(0)).toBe(0)
+    expect(getRaceProgress(15)).toBeGreaterThan(getRaceProgress(5))
+    expect(getRaceProgress(5)).toBeGreaterThan(getRaceProgress(2))
+    expect(getRaceProgress(1_000)).toBeLessThan(72)
   })
 })

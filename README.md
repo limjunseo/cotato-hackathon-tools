@@ -37,13 +37,15 @@ Merge Race 단독 주소: `http://127.0.0.1:4176`
 
 ## 실시간 Merge Race
 
-루트 `.env.local`에 서버 전용 GitHub token을 설정하면 포털 Vite 서버가 `8th-COKERTHON`의 merge를 5초마다 확인합니다.
+루트 `.env.local`에 서버 전용 GitHub token을 설정하면 포털 Vite 서버가 `8th-COKERTHON`의 merge를 5초마다 확인합니다. 신규 merge가 트리거되면 해당 PR에 포함된 커밋 수가 팀 점수와 순위에 반영됩니다.
 
 ```dotenv
 GITHUB_TOKEN=github_pat_...
 ```
 
 `VITE_GITHUB_TOKEN`처럼 `VITE_` 접두사를 사용하면 브라우저 번들에 노출될 수 있으므로 사용하지 않습니다. 타이머에서는 신규 merge가 감지되면 15초 동안 Merge Race로 자동 전환되고, 감자 추첨 화면에서는 이벤트만 대기열에 저장합니다.
+
+Merge Race를 기본 운영 화면으로 띄워둔 경우에는 화면을 전환하지 않고, 현재 화면에서 merge 팀 알림과 효과음을 재생한 뒤 커밋 수 기준 점수와 순위를 갱신합니다.
 
 ## 수동 동기화
 

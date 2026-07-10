@@ -25,17 +25,19 @@ export function MergeAnnouncement({ batch, phase }: {
   }
 
   return (
-    <div className={`merge-announcement merge-announcement--${phase}`} role="status">
+    <div
+      className={`merge-announcement merge-announcement--${phase} ${phase === 'manual' ? 'merge-announcement--live' : ''}`}
+      role="status"
+    >
       <span>{batch.totalMerges} NEW MERGE{batch.totalMerges > 1 ? 'S' : ''}</span>
       <h1>{buildAnnouncement(batch)}</h1>
-      {batch.teamChanges.some((change) => change.count > 1) && (
-        <p>
-          {batch.teamChanges
-            .filter((change) => change.count > 1)
-            .map((change) => `${change.teamName} DOUBLE BOOST ×${change.count}`)
-            .join(' · ')}
-        </p>
-      )}
+      <p>
+        {batch.teamChanges
+          .map((change) => (
+            `${change.teamName} +${change.commitCount} COMMIT${change.commitCount === 1 ? '' : 'S'}`
+          ))
+          .join(' · ')}
+      </p>
     </div>
   )
 }

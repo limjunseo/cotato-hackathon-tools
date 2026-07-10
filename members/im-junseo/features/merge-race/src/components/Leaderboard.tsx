@@ -6,7 +6,7 @@ export function Leaderboard({ teams }: { teams: TeamScore[] }) {
   return (
     <aside className="merge-leaderboard" aria-labelledby="leaderboard-title">
       <header>
-        <span>깃허브 머지 횟수 · LIVE BOARD</span>
+        <span>깃허브 커밋 횟수 · LIVE BOARD</span>
         <h2 id="leaderboard-title">현재 순위</h2>
       </header>
       <ol>

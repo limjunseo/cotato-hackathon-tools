@@ -11,6 +11,7 @@ const defaults = new Map([
 function pullRequest(overrides: Partial<RawMergedPullRequest> = {}): RawMergedPullRequest {
   return {
     baseRefName: 'main',
+    commitCount: 3,
     mergedAt: '2026-07-10T11:00:00.000Z',
     number: 12,
     repositoryFullName: '8th-COKERTHON/client-team3',
@@ -25,6 +26,7 @@ describe('merge score engine', () => {
       pullRequest(),
       pullRequest({
         baseRefName: 'develop',
+        commitCount: 5,
         number: 7,
         repositoryFullName: '8th-COKERTHON/server-team3',
       }),
@@ -33,9 +35,9 @@ describe('merge score engine', () => {
     expect(merges).toHaveLength(2)
     expect(calculateScores(merges)).toContainEqual(expect.objectContaining({
       teamId: 3,
-      client: 1,
-      server: 1,
-      total: 2,
+      client: 3,
+      server: 5,
+      total: 8,
     }))
   })
 
@@ -53,13 +55,13 @@ describe('merge score engine', () => {
 
   it('counts multiple teams found in the same poll without collapsing same-team merges', () => {
     const merges = selectValidMerges([
-      pullRequest({ number: 1 }),
-      pullRequest({ number: 2 }),
-      pullRequest({ number: 5, repositoryFullName: '8th-COKERTHON/client-team5' }),
+      pullRequest({ commitCount: 2, number: 1 }),
+      pullRequest({ commitCount: 4, number: 2 }),
+      pullRequest({ commitCount: 7, number: 5, repositoryFullName: '8th-COKERTHON/client-team5' }),
     ], defaults)
     const scores = calculateScores(merges)
 
-    expect(scores).toContainEqual(expect.objectContaining({ teamId: 3, total: 2 }))
-    expect(scores).toContainEqual(expect.objectContaining({ teamId: 5, total: 1 }))
+    expect(scores).toContainEqual(expect.objectContaining({ teamId: 3, total: 6 }))
+    expect(scores).toContainEqual(expect.objectContaining({ teamId: 5, total: 7 }))
   })
 })

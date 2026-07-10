@@ -8,9 +8,15 @@ import {
 } from './presentationStorage'
 import type { MergeEvent, MergeRaceState } from './types'
 
-function event(teamId: number, sequence: number, repositoryType: 'client' | 'server' = 'client'): MergeEvent {
+function event(
+  teamId: number,
+  sequence: number,
+  repositoryType: 'client' | 'server' = 'client',
+  commitCount = 1,
+): MergeEvent {
   return {
     baseRefName: 'main',
+    commitCount,
     id: `repo-${teamId}#${sequence}`,
     mergedAt: '2026-07-11T00:00:00.000Z',
     prNumber: sequence,
@@ -55,14 +61,20 @@ describe('merge race presentation storage', () => {
   it('calculates scores before a client/server double merge and persists presentation timing', () => {
     vi.spyOn(Date, 'now').mockReturnValue(10_000)
     const presentation = createPresentation(
-      [event(2, 1, 'client'), event(2, 2, 'server')],
+      [event(2, 1, 'client', 3), event(2, 2, 'server', 2)],
       state,
       '/features/hackathon-timer',
     )
     writeActivePresentation(presentation)
 
-    expect(presentation.batch.teamChanges).toEqual([{ count: 2, teamId: 2, teamName: '2팀' }])
-    expect(presentation.scoresBefore[1]).toEqual(expect.objectContaining({ client: 2, server: 1, total: 3 }))
+    expect(presentation.batch.teamChanges).toEqual([{
+      commitCount: 5,
+      mergeCount: 2,
+      teamId: 2,
+      teamName: '2팀',
+    }])
+    expect(presentation.batch.totalCommits).toBe(5)
+    expect(presentation.scoresBefore[1]).toEqual(expect.objectContaining({ client: 0, server: 0, total: 0 }))
     expect(readActivePresentation()?.startedAt).toBe(10_000)
   })
 })
