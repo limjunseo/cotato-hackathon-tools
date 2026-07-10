@@ -9,7 +9,7 @@ export function MergeAnnouncement({ batch, phase }: {
     return (
       <div className="merge-announcement merge-announcement--manual">
         <span>MANUAL LIVE MODE</span>
-        <h1>6 TEAMS<br /><em>MERGE RACE</em></h1>
+        <h1>6 TEAMS<br /><em>COMMIT RACE</em></h1>
         <p>GitHub default branch merge를 기다리고 있습니다.</p>
       </div>
     )

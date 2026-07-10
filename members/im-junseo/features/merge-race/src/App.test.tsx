@@ -33,12 +33,13 @@ beforeEach(() => {
   })))
 })
 
-describe('Merge Race', () => {
+describe('Commit Race', () => {
   it('shows all six lanes and manual live mode when opened directly', () => {
     render(<App />)
 
     expect(screen.getByText('MANUAL LIVE MODE')).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: '6개 팀 Merge Race' })).toBeInTheDocument()
+    expect(screen.getByText('COMMIT RACE')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '6개 팀 Commit Race' })).toBeInTheDocument()
     expect(screen.getAllByLabelText(/팀 감자$/)).toHaveLength(6)
   })
 

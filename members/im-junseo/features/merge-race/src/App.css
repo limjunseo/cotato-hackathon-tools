@@ -228,12 +228,12 @@
 .race-boost { position: absolute; top: 50%; left: calc(112px + var(--distance-x)); transform: translateY(-50%); color: var(--team-color); font: 900 9px/1 Consolas, monospace; text-shadow: 0 0 10px var(--team-color); animation: boost-label 1.5s steps(4, end) both; }
 .race-lane__score { display: grid; grid-template-columns: 1fr; align-content: center; justify-items: start; }
 .race-lane__score strong { color: var(--team-color, #ffd17b); font: 900 clamp(36px, 3.7vw, 56px)/0.82 Impact, sans-serif; letter-spacing: -0.03em; }
-.race-lane__score span { margin-top: 5px; color: rgba(255, 242, 207, 0.68); font: 900 10px/1.1 'Malgun Gothic', sans-serif; word-break: keep-all; }
+.race-lane__score span { margin-top: 6px; color: rgba(255, 242, 207, 0.78); font: 900 clamp(12px, 1vw, 15px)/1.15 'Malgun Gothic', sans-serif; word-break: keep-all; }
 .race-lane__score small { margin-top: 5px; color: rgba(255, 242, 207, 0.4); font: 900 7px/1 Consolas, monospace; }
 
 .merge-leaderboard { display: grid; grid-template-rows: auto minmax(0, 1fr); padding: 18px; }
 .merge-leaderboard header { padding-bottom: 12px; border-bottom: 1px solid rgba(255, 242, 207, 0.1); }
-.merge-leaderboard header span { color: #65dc87; font: 900 7px/1 Consolas, monospace; letter-spacing: 0.16em; }
+.merge-leaderboard header span { color: #65dc87; font: 900 clamp(9px, 0.75vw, 12px)/1.2 Consolas, 'Malgun Gothic', monospace; letter-spacing: 0.12em; }
 .merge-leaderboard h2 { margin: 8px 0 0; font: 900 24px/1 'Malgun Gothic', sans-serif; }
 .merge-leaderboard ol { display: grid; align-content: center; gap: 7px; margin: 0; padding: 0; list-style: none; }
 .merge-leaderboard li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; min-height: 48px; padding: 0 12px; border-left: 4px solid var(--rank-color); background: rgba(255, 255, 255, 0.035); transition: transform 0.6s ease; }
@@ -276,7 +276,7 @@
 .final-standings header { position: relative; text-align: center; }
 .final-standings header > span { color: #65df88; font: 900 9px/1 Consolas, monospace; letter-spacing: 0.24em; }
 .final-standings h2 { margin: 12px 0 0; font: 900 clamp(54px, 7vw, 104px)/0.9 Impact, 'Arial Black', 'Malgun Gothic', sans-serif; letter-spacing: -0.035em; text-shadow: 7px 8px 0 rgba(0, 0, 0, 0.28); }
-.final-standings header p { margin: 12px 0 0; color: #ffc273; font: 900 13px/1 'Malgun Gothic', sans-serif; }
+.final-standings header p { margin: 12px 0 0; color: #ffc273; font: 900 clamp(15px, 1.25vw, 19px)/1.15 'Malgun Gothic', sans-serif; }
 .final-standings ol { display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 12px; width: min(1120px, 90vw); margin: 0 auto; padding: 0; list-style: none; }
 .final-standings li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; min-height: 94px; padding: 13px 18px; border: 1px solid rgba(255, 242, 207, 0.15); border-top: 4px solid var(--standing-color); background: linear-gradient(150deg, rgba(51, 39, 22, 0.96), rgba(16, 22, 14, 0.96)); box-shadow: 6px 7px 0 rgba(0, 0, 0, 0.24); animation: standing-card-arrive 0.5s steps(4, end) both; }
 .final-standings li:first-child { color: #2a1709; background: linear-gradient(145deg, #ffe099, #f0a43d); transform: scale(1.035); }
