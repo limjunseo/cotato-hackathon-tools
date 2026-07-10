@@ -16,7 +16,7 @@ type LaneStyle = CSSProperties & {
 
 export function RaceBoard({ batch, phase, teams }: RaceBoardProps) {
   return (
-    <section className={`race-board race-board--${phase}`} aria-label="6개 팀 Merge Race">
+    <section className={`race-board race-board--${phase}`} aria-label="6개 팀 Commit Race">
       <header className="race-board__header">
         <span>TEAM LANES · FIXED ORDER</span>
         <span>1 COMMIT = 1 BOOST UNIT</span>

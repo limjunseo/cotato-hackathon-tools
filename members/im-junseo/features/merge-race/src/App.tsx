@@ -175,7 +175,7 @@ export default function App() {
       <header className="merge-header">
         <div className="merge-brand">
           <span className="merge-brand__potato" aria-hidden="true"><i /><i /></span>
-          <div><strong>COTATO</strong><small>MERGE RACE · 8TH COKERTHON</small></div>
+          <div><strong>COTATO</strong><small>COMMIT RACE · 8TH COKERTHON</small></div>
         </div>
         <div className="merge-header__actions">
           <LiveStatus state={state} />
