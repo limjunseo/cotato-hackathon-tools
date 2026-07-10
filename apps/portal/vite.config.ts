@@ -3,7 +3,8 @@ import { access } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
+import { createMergeRacePlugin } from './vite-plugins/merge-race'
 
 const portalDir = fileURLToPath(new URL('.', import.meta.url))
 const repoRoot = path.resolve(portalDir, '../..')
@@ -118,11 +119,22 @@ function createManualSyncPlugin(): Plugin {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), createManualSyncPlugin()],
-  server: {
-    fs: {
-      allow: ['../..'],
+export default defineConfig(({ mode }) => {
+  const environment = loadEnv(mode, repoRoot, '')
+
+  return {
+    plugins: [
+      react(),
+      createManualSyncPlugin(),
+      createMergeRacePlugin({
+        repoRoot,
+        token: process.env.GITHUB_TOKEN || environment.GITHUB_TOKEN,
+      }),
+    ],
+    server: {
+      fs: {
+        allow: ['../..'],
+      },
     },
-  },
+  }
 })

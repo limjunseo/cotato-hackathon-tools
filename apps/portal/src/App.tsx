@@ -3,6 +3,8 @@ import type { FeatureDefinition } from '@cotato/contracts'
 import { BrandMark } from './components/BrandMark'
 import { findFeatureByPath } from './feature-registry'
 import { HomePage } from './pages/HomePage'
+import { useMergeRaceOrchestrator } from './runtime/merge-race/useMergeRaceOrchestrator'
+import { useMergeRaceAudioUnlock } from './runtime/merge-race/useMergeRaceAudioUnlock'
 import './portal.css'
 
 function getPath() {
@@ -21,22 +23,25 @@ function FeatureLoading() {
 export default function App() {
   const [path, setPath] = useState(getPath)
   const [syncing, setSyncing] = useState(false)
+  useMergeRaceAudioUnlock()
   const feature = findFeatureByPath(path)
   const FeatureComponent = useMemo(
     () => (feature ? lazy(feature.load) : null),
     [feature],
   )
 
+  const navigate = (nextPath: string) => {
+    window.history.pushState({}, '', nextPath)
+    setPath(nextPath)
+  }
+
+  useMergeRaceOrchestrator({ navigate, path })
+
   useEffect(() => {
     const handlePopState = () => setPath(getPath())
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
-
-  const navigate = (nextPath: string) => {
-    window.history.pushState({}, '', nextPath)
-    setPath(nextPath)
-  }
 
   const openFeature = (nextFeature: FeatureDefinition) => {
     navigate(nextFeature.path)

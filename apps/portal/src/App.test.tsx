@@ -15,6 +15,7 @@ describe('portal', () => {
     expect(screen.getByRole('heading', { name: '김기민' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '해커톤 타이머' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '행운의 감자 추첨' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '실시간 MERGE RACE' })).toBeInTheDocument()
   })
 
   it('directs the timer card to its feature route', async () => {

@@ -13,7 +13,8 @@
   "dependencies": {
     "@cotato/contracts": "workspace:*",
     "@cotato/hackathon-timer": "workspace:*",
-    "@cotato/lucky-potato-draw": "workspace:*"
+    "@cotato/lucky-potato-draw": "workspace:*",
+    "@cotato/merge-race": "workspace:*"
   },
   "devDependencies": {
     "oxlint": "^1.71.0",

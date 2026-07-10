@@ -27,9 +27,27 @@ pnpm dev:timer
 
 타이머 단독 주소: `http://127.0.0.1:4174`
 
+Merge Race 기능만 실행:
+
+```powershell
+pnpm dev:merge-race
+```
+
+Merge Race 단독 주소: `http://127.0.0.1:4176`
+
+## 실시간 Merge Race
+
+루트 `.env.local`에 서버 전용 GitHub token을 설정하면 포털 Vite 서버가 `8th-COKERTHON`의 merge를 5초마다 확인합니다.
+
+```dotenv
+GITHUB_TOKEN=github_pat_...
+```
+
+`VITE_GITHUB_TOKEN`처럼 `VITE_` 접두사를 사용하면 브라우저 번들에 노출될 수 있으므로 사용하지 않습니다. 타이머에서는 신규 merge가 감지되면 15초 동안 Merge Race로 자동 전환되고, 감자 추첨 화면에서는 이벤트만 대기열에 저장합니다.
+
 ## 수동 동기화
 
-자동 감시는 하지 않고, 필요할 때만 GitHub 최신 내용을 반영합니다.
+코드 동기화는 필요할 때만 수동으로 실행합니다. Merge Race의 점수 감시는 코드 동기화와 별개로 Vite 서버에서 자동 실행됩니다.
 
 - VS Code에서 `Sync latest from GitHub` 작업을 실행합니다.
 - 같은 동작을 터미널에서 직접 하려면 `scripts/sync-latest.ps1`를 실행합니다.
