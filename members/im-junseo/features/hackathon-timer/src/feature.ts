@@ -12,5 +12,6 @@ export const hackathonTimerFeature: FeatureDefinition = {
   path: '/features/hackathon-timer',
   status: 'ready',
   accent: '#ff6a00',
+  devPort: 4174,
   load: () => import('./App'),
 }

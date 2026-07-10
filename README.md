@@ -27,6 +27,14 @@ pnpm dev:timer
 
 타이머 단독 주소: `http://127.0.0.1:4174`
 
+## 수동 동기화
+
+자동 감시는 하지 않고, 필요할 때만 GitHub 최신 내용을 반영합니다.
+
+- VS Code에서 `Sync latest from GitHub` 작업을 실행합니다.
+- 같은 동작을 터미널에서 직접 하려면 `scripts/sync-latest.ps1`를 실행합니다.
+- 이 작업은 현재 브랜치에 대해 `git pull --ff-only`만 수행합니다.
+
 ## 전체 검증
 
 ```powershell

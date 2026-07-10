@@ -20,6 +20,7 @@ function FeatureLoading() {
 
 export default function App() {
   const [path, setPath] = useState(getPath)
+  const [syncing, setSyncing] = useState(false)
   const feature = findFeatureByPath(path)
   const FeatureComponent = useMemo(
     () => (feature ? lazy(feature.load) : null),
@@ -39,6 +40,31 @@ export default function App() {
 
   const openFeature = (nextFeature: FeatureDefinition) => {
     navigate(nextFeature.path)
+  }
+
+  const syncLatest = async () => {
+    if (syncing) {
+      return
+    }
+
+    setSyncing(true)
+
+    try {
+      const response = await fetch('/__sync/latest', {
+        method: 'POST',
+      })
+
+      const result = await response.json() as { ok: boolean; error?: string }
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || '최신 Git 반영에 실패했습니다.')
+      }
+
+      window.location.reload()
+    } catch (error) {
+      setSyncing(false)
+      window.alert(error instanceof Error ? error.message : '최신 Git 반영에 실패했습니다.')
+    }
   }
 
   if (FeatureComponent && feature) {
@@ -71,5 +97,5 @@ export default function App() {
     )
   }
 
-  return <HomePage onOpen={openFeature} />
+  return <HomePage onOpen={openFeature} onSync={syncLatest} syncing={syncing} />
 }

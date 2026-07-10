@@ -3,7 +3,15 @@ import { FeatureCard } from '@cotato/ui'
 import { BrandMark } from '../components/BrandMark'
 import { features, members } from '../feature-registry'
 
-export function HomePage({ onOpen }: { onOpen: (feature: FeatureDefinition) => void }) {
+export function HomePage({
+  onOpen,
+  onSync,
+  syncing,
+}: {
+  onOpen: (feature: FeatureDefinition) => void
+  onSync: () => void
+  syncing: boolean
+}) {
   return (
     <main className="portal">
       <div className="portal-grid" aria-hidden="true" />
@@ -17,7 +25,17 @@ export function HomePage({ onOpen }: { onOpen: (feature: FeatureDefinition) => v
           <span />
           <small>HACKATHON TOOLS</small>
         </div>
-        <div className="portal-live"><i />LOCAL ORCHESTRATOR</div>
+        <div className="portal-actions">
+          <div className="portal-live"><i />LOCAL ORCHESTRATOR</div>
+          <button
+            type="button"
+            className="portal-sync"
+            onClick={onSync}
+            disabled={syncing}
+          >
+            {syncing ? 'SYNCING…' : '최신 Git 반영'}
+          </button>
+        </div>
       </header>
 
       <section className="portal-hero">
@@ -37,13 +55,17 @@ export function HomePage({ onOpen }: { onOpen: (feature: FeatureDefinition) => v
       <section className="member-lanes" aria-label="구성원별 기능">
         {members.map((member, memberIndex) => {
           const ownedFeatures = features.filter((feature) => feature.owner.id === member.id)
+          const mainPort = ownedFeatures[0]?.devPort
           return (
             <section className="member-lane" key={member.id}>
               <header className="member-lane__header">
                 <span className="member-number">0{memberIndex + 1}</span>
                 <div>
                   <h2>{member.name}</h2>
-                  <p>{member.role} · {ownedFeatures.length} FEATURES</p>
+                  <p>
+                    {member.role} · {ownedFeatures.length} FEATURES · {' '}
+                    {mainPort ? `MAIN PORT ${mainPort}` : 'MAIN PORT TBD'}
+                  </p>
                 </div>
                 <i style={{ background: member.accent }} />
               </header>
@@ -57,7 +79,7 @@ export function HomePage({ onOpen }: { onOpen: (feature: FeatureDefinition) => v
                   <div className="empty-feature">
                     <span>+</span>
                     <strong>새 기능을 준비 중입니다</strong>
-                    <p>담당자 폴더의 템플릿으로 첫 기능을 시작할 수 있습니다.</p>
+                    <p>담당자 폴더의 main 포트를 정하면 여기에 카드가 표시됩니다.</p>
                   </div>
                 )}
               </div>

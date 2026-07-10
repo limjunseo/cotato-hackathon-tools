@@ -55,6 +55,19 @@
   color: #77736c;
 }
 
+.cotato-feature-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.cotato-feature-port {
+  color: color-mix(in srgb, var(--feature-accent) 80%, #f7f3e8);
+  font: 750 9px/1 ui-monospace, monospace;
+  letter-spacing: 0.16em;
+}
+
 .cotato-feature-symbol {
   position: relative;
   width: 40px;

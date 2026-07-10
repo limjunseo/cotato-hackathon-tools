@@ -25,6 +25,11 @@ export function FeatureCard({ feature, onOpen }: FeatureCardProps) {
         </span>
         <span className="cotato-feature-owner">{feature.owner.name}</span>
       </div>
+      <div className="cotato-feature-meta">
+        <span className="cotato-feature-port">
+          {feature.devPort ? `PORT ${feature.devPort}` : 'PORT TBD'}
+        </span>
+      </div>
       <div className="cotato-feature-symbol" aria-hidden="true">
         <i /><i /><i /><i />
       </div>

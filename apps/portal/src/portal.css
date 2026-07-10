@@ -81,6 +81,12 @@ button {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.portal-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .portal-brand {
   display: flex;
   align-items: center;
@@ -143,6 +149,33 @@ button {
   border-radius: 50%;
   background: #57c864;
   box-shadow: 0 0 12px #57c864;
+}
+
+.portal-sync {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 106, 0, 0.3);
+  border-radius: 999px;
+  color: #ffe4c2;
+  background: rgba(255, 106, 0, 0.08);
+  font: 800 9px/1 ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.portal-sync:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(255, 106, 0, 0.65);
+  background: rgba(255, 106, 0, 0.14);
+}
+
+.portal-sync:disabled {
+  cursor: progress;
+  opacity: 0.65;
 }
 
 .portal-hero {

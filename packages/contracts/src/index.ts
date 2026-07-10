@@ -19,5 +19,6 @@ export type FeatureDefinition = {
   path: `/features/${string}`
   status: FeatureStatus
   accent: string
+  devPort?: number
   load: () => Promise<FeatureModule>
 }
