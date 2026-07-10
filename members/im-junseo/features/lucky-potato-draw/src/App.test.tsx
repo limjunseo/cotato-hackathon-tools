@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import App from './App'
 
 describe('lucky potato draw', () => {
@@ -59,5 +59,25 @@ describe('lucky potato draw', () => {
 
     expect(screen.queryByRole('button', { name: '8번 제외 취소' })).not.toBeInTheDocument()
     expect(container.querySelectorAll('.potato-ball')).toHaveLength(39)
+  })
+
+  it('provides music and browser fullscreen controls', () => {
+    const requestFullscreen = vi.fn(() => Promise.resolve())
+    Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
+    })
+    render(<App />)
+
+    const musicButton = screen.getByRole('button', { name: 'BGM 끄기' })
+    expect(musicButton).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(musicButton)
+    expect(screen.getByRole('button', { name: 'BGM 켜기' })).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(screen.getByRole('button', { name: '전체화면으로 보기' }))
+    expect(requestFullscreen).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: '전체화면 종료' })).toBeInTheDocument()
+
+    delete (HTMLElement.prototype as Partial<HTMLElement>).requestFullscreen
   })
 })

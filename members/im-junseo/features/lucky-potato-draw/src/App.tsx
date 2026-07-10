@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DrawControls } from './components/DrawControls'
 import { PinballBoard } from './components/PinballBoard'
 import { ResultTray } from './components/ResultTray'
+import { WinnerCelebration } from './components/WinnerCelebration'
 import { DEFAULT_DRAW_COUNT, MAX_DRAW_NUMBER, drawUniqueNumbers } from './lib/draw'
 import { COUNTDOWN_DURATION_MS } from './lib/pinball'
+import { playRaceMusic } from './lib/raceMusic'
+import type { RaceMusicSession } from './lib/raceMusic'
 import type { DrawPhase } from './types'
 import './App.css'
 
@@ -13,15 +16,20 @@ const PHASE_COPY = {
   idle: ['41 POTATOES READY', '1번부터 41번까지, 모든 감자가 출발선에 모였습니다.'],
   countdown: ['READY TO RACE', '3, 2, 1... 땅! 모두 함께 출발합니다.'],
   running: ['POTATO RACE', '41명의 감자 중 가장 먼저 도착할 행운의 감자는?'],
-  complete: ['LUCKY POTATOES', '오늘의 행운 감자가 모두 도착했습니다.'],
+  complete: ['LUCKY POTATOES', '당첨 감자 뒤로 모든 감자가 골인했습니다.'],
 } as const
 
 export default function App() {
+  const appElement = useRef<HTMLElement>(null)
+  const musicSession = useRef<RaceMusicSession | null>(null)
   const [count, setCount] = useState(DEFAULT_DRAW_COUNT)
   const [phase, setPhase] = useState<DrawPhase>('idle')
   const [raceOrder, setRaceOrder] = useState<number[]>([])
   const [revealedNumbers, setRevealedNumbers] = useState<number[]>([])
   const [excludedNumbers, setExcludedNumbers] = useState<number[]>([])
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isMusicEnabled, setIsMusicEnabled] = useState(true)
+  const [showWinners, setShowWinners] = useState(false)
   const [runId, setRunId] = useState(0)
   const participants = useMemo(
     () => ALL_PARTICIPANTS.filter((number) => !excludedNumbers.includes(number)),
@@ -41,6 +49,28 @@ export default function App() {
     setCount((current) => Math.min(current, participants.length))
   }, [participants.length])
 
+  useEffect(() => {
+    const syncFullscreenState = () => setIsFullscreen(document.fullscreenElement === appElement.current)
+    document.addEventListener('fullscreenchange', syncFullscreenState)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFullscreenState)
+      musicSession.current?.stop()
+    }
+  }, [])
+
+  const stopMusic = () => {
+    musicSession.current?.stop()
+    musicSession.current = null
+  }
+
+  const startMusic = () => {
+    stopMusic()
+    if (isMusicEnabled) {
+      musicSession.current = playRaceMusic()
+    }
+  }
+
   const startDraw = () => {
     if (phase === 'countdown' || phase === 'running') {
       return
@@ -50,8 +80,10 @@ export default function App() {
       drawUniqueNumbers(MAX_DRAW_NUMBER).filter((number) => participants.includes(number)),
     )
     setRevealedNumbers([])
+    setShowWinners(false)
     setPhase('countdown')
     setRunId((current) => current + 1)
+    startMusic()
   }
 
   const revealNumber = (number: number) => {
@@ -66,8 +98,46 @@ export default function App() {
     ))
   }
 
+  const completeRace = () => {
+    stopMusic()
+    setPhase('complete')
+    setShowWinners(true)
+  }
+
+  const toggleMusic = () => {
+    const nextMusicState = !isMusicEnabled
+    setIsMusicEnabled(nextMusicState)
+
+    if (!nextMusicState) {
+      stopMusic()
+    } else if (phase === 'countdown' || phase === 'running') {
+      musicSession.current = playRaceMusic()
+    }
+  }
+
+  const toggleFullscreen = async () => {
+    if (isFullscreen) {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      } else {
+        setIsFullscreen(false)
+      }
+      return
+    }
+
+    setIsFullscreen(true)
+    try {
+      await appElement.current?.requestFullscreen()
+    } catch {
+      // The fixed viewport mode remains active when the browser blocks Fullscreen API access.
+    }
+  }
+
   return (
-    <main className={`lucky-potato-app lucky-potato-app--${phase}`}>
+    <main
+      ref={appElement}
+      className={`lucky-potato-app lucky-potato-app--${phase} ${isFullscreen ? 'lucky-potato-app--fullscreen' : ''}`}
+    >
       <div className="pixel-noise" aria-hidden="true" />
 
       <header className="potato-header">
@@ -78,9 +148,30 @@ export default function App() {
             <small>LUCKY ARCADE · 2026</small>
           </div>
         </div>
-        <div className="header-status">
-          <i aria-hidden="true" />
-          <span>{phase === 'idle' ? `${participants.length} POTATOES READY` : PHASE_COPY[phase][0]}</span>
+        <div className="header-actions">
+          <div className="header-status">
+            <i aria-hidden="true" />
+            <span>{phase === 'idle' ? `${participants.length} POTATOES READY` : PHASE_COPY[phase][0]}</span>
+          </div>
+          <button
+            className={`utility-button ${isMusicEnabled ? 'is-active' : ''}`}
+            type="button"
+            aria-label={isMusicEnabled ? 'BGM 끄기' : 'BGM 켜기'}
+            aria-pressed={isMusicEnabled}
+            onClick={toggleMusic}
+          >
+            <span aria-hidden="true">♪</span>
+            BGM {isMusicEnabled ? 'ON' : 'OFF'}
+          </button>
+          <button
+            className="utility-button"
+            type="button"
+            aria-label={isFullscreen ? '전체화면 종료' : '전체화면으로 보기'}
+            onClick={() => void toggleFullscreen()}
+          >
+            <span aria-hidden="true">▣</span>
+            {isFullscreen ? '화면 복귀' : '전체화면'}
+          </button>
         </div>
       </header>
 
@@ -109,7 +200,7 @@ export default function App() {
           runId={runId}
           winnerCount={count}
           onNumberLanded={revealNumber}
-          onComplete={() => setPhase('complete')}
+          onComplete={completeRace}
         />
 
         <aside className="draw-sidebar">
@@ -139,6 +230,14 @@ export default function App() {
         <span>COde Together, Arrive TOgether</span>
         <span>RESULTS ARE GENERATED LOCALLY IN YOUR BROWSER</span>
       </footer>
+
+      {showWinners && (
+        <WinnerCelebration
+          participants={participants}
+          winners={revealedNumbers}
+          onClose={() => setShowWinners(false)}
+        />
+      )}
     </main>
   )
 }
