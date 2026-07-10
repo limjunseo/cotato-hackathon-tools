@@ -33,3 +33,7 @@ for (const feature of features) {
 export function findFeatureByPath(path: string) {
   return features.find((feature) => feature.path === path) ?? null
 }
+
+export function findFeatureById(id: string) {
+  return features.find((feature) => feature.id === id) ?? null
+}

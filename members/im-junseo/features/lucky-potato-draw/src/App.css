@@ -207,7 +207,7 @@
 
 .potato-intro h1 {
   margin: 13px 0 0;
-  font: 900 clamp(50px, 6vw, 88px)/0.94 Impact, 'Arial Black', 'Malgun Gothic', sans-serif;
+  font: 900 clamp(50px, 6vw, 88px)/1.1 Impact, 'Arial Black', 'Malgun Gothic', sans-serif;
   letter-spacing: -0.055em;
   text-shadow: 6px 6px 0 rgba(0, 0, 0, 0.22);
 }
@@ -979,7 +979,7 @@
 .winner-celebration__header h2 {
   margin: 14px 0 0;
   color: #fff6d8;
-  font: 900 clamp(38px, 5vw, 70px)/0.95 Impact, 'Arial Black', 'Malgun Gothic', sans-serif;
+  font: 900 clamp(38px, 5vw, 70px)/1.08 Impact, 'Arial Black', 'Malgun Gothic', sans-serif;
   letter-spacing: -0.045em;
   text-shadow: 6px 7px 0 rgba(0, 0, 0, 0.3);
 }
