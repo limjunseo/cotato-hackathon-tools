@@ -129,7 +129,7 @@ describe('Commit Race', () => {
       returnPath: '/features/hackathon-timer',
       scoresBefore: EMPTY_TEAMS,
       scoresAfter: EMPTY_TEAMS.map((team) => team.teamId === 3 ? { ...team, total: 4 } : team),
-      startedAt: Date.now() - 11_000,
+      startedAt: Date.now() - 12_000,
     }
     window.sessionStorage.setItem(ACTIVE_PRESENTATION_KEY, JSON.stringify(presentation))
 

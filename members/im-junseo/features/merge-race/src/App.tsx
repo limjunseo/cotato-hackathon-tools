@@ -13,6 +13,7 @@ import {
   createBatch,
   getPresentationPhase,
   readSessionValue,
+  subtractBatchFromScores,
 } from './lib/presentation'
 import type { MergeBatch, MergePresentation, MergeRaceState } from './types'
 import './App.css'
@@ -28,13 +29,15 @@ const EMPTY_STATE: MergeRaceState = {
   teams: EMPTY_TEAMS,
 }
 
-const LIVE_NOTIFICATION_DURATION_MS = 4_500
+const MANUAL_PRESENTATION_DELAY_MS = 1_150
+const MANUAL_PRESENTATION_DURATION_MS = 16_500
 
 type MergeAudioWindow = Window & { __cotatoMergeAudioContext?: AudioContext }
 
 export default function App() {
   const appElement = useRef<HTMLElement>(null)
   const previousSequence = useRef<number | null>(null)
+  const manualPresentationStartTimer = useRef<number | null>(null)
   const manualBatchTimer = useRef<number | null>(null)
   const [state, setState] = useState(
     () => readSessionValue<MergeRaceState>(LATEST_STATE_KEY) ?? EMPTY_STATE,
@@ -42,6 +45,7 @@ export default function App() {
   const [presentation, setPresentation] = useState(
     () => readSessionValue<MergePresentation>(ACTIVE_PRESENTATION_KEY),
   )
+  const [manualPresentation, setManualPresentation] = useState<MergePresentation | null>(null)
   const [manualBatch, setManualBatch] = useState<MergeBatch | null>(null)
   const [now, setNow] = useState(Date.now)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -89,11 +93,33 @@ export default function App() {
             (event) => event.sequence > (previousSequence.current ?? 0),
           )
           if (newEvents.length > 0) {
-            setManualBatch(createBatch(newEvents, `manual-${nextState.latestSequence}`))
+            const batch = createBatch(newEvents, `manual-${nextState.latestSequence}`)
+            setManualBatch(batch)
+
+            if (manualPresentationStartTimer.current) window.clearTimeout(manualPresentationStartTimer.current)
+            manualPresentationStartTimer.current = window.setTimeout(() => {
+              const scoresBefore = nextState.teams
+              const scoresAfter = subtractBatchFromScores(scoresBefore, batch.teamChanges)
+
+              setManualPresentation({
+                batch,
+                durationMs: MANUAL_PRESENTATION_DURATION_MS,
+                mode: 'auto',
+                presentationId: `manual-${nextState.latestSequence}`,
+                returnPath: window.location.pathname,
+                scoresAfter,
+                scoresBefore,
+                startedAt: Date.now(),
+              })
+            }, MANUAL_PRESENTATION_DELAY_MS)
+
             if (manualBatchTimer.current) window.clearTimeout(manualBatchTimer.current)
             manualBatchTimer.current = window.setTimeout(
-              () => setManualBatch(null),
-              LIVE_NOTIFICATION_DURATION_MS,
+              () => {
+                setManualBatch(null)
+                setManualPresentation(null)
+              },
+              MANUAL_PRESENTATION_DURATION_MS,
             )
           }
         }
@@ -108,36 +134,38 @@ export default function App() {
     return () => {
       disposed = true
       window.clearInterval(timer)
+      if (manualPresentationStartTimer.current) window.clearTimeout(manualPresentationStartTimer.current)
       if (manualBatchTimer.current) window.clearTimeout(manualBatchTimer.current)
     }
   }, [presentation])
 
-  const automatic = presentation !== null
-  const elapsedMs = presentation ? Math.max(0, now - presentation.startedAt) : 0
+  const activePresentation = presentation ?? manualPresentation
+  const automatic = activePresentation !== null
+  const elapsedMs = activePresentation ? Math.max(0, now - activePresentation.startedAt) : 0
   const phase = getPresentationPhase(elapsedMs, automatic)
-  const batch = presentation?.batch ?? manualBatch
-  const displayTeams = presentation
+  const batch = activePresentation?.batch ?? manualBatch
+  const displayTeams = activePresentation
     ? phase === 'detected' || phase === 'announcement'
-      ? presentation.scoresBefore
-      : presentation.scoresAfter
+      ? activePresentation.scoresBefore
+      : activePresentation.scoresAfter
     : state.teams
-  const remainingSeconds = presentation
-    ? Math.max(0, Math.ceil((presentation.durationMs - elapsedMs) / 1_000))
+  const remainingSeconds = activePresentation
+    ? Math.max(0, Math.ceil((activePresentation.durationMs - elapsedMs) / 1_000))
     : null
 
   useEffect(() => {
-    if (!presentation) return
-    const stopAudio = playPresentationAudio(Math.max(0, Date.now() - presentation.startedAt))
+    if (!activePresentation) return
+    const stopAudio = playPresentationAudio(Math.max(0, Date.now() - activePresentation.startedAt))
     setSoundReady(stopAudio !== null)
     return () => stopAudio?.()
-  }, [presentation?.presentationId])
+  }, [activePresentation?.presentationId])
 
   useEffect(() => {
-    if (!manualBatch || presentation) return
+    if (!manualBatch || activePresentation) return
     const stopAudio = playMergeNotificationAudio()
     setSoundReady(stopAudio !== null)
     return () => stopAudio?.()
-  }, [manualBatch?.id, presentation])
+  }, [manualBatch?.id, activePresentation])
 
   useEffect(() => {
     const onFullscreenChange = () => setIsFullscreen(document.fullscreenElement === appElement.current)

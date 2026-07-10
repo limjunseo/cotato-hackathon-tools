@@ -44,10 +44,10 @@ export function readSessionValue<T>(key: string): T | null {
 
 export function getPresentationPhase(elapsedMs: number, automatic: boolean): PresentationPhase {
   if (!automatic) return 'manual'
-  if (elapsedMs < 1_200) return 'detected'
-  if (elapsedMs < 4_500) return 'announcement'
-  if (elapsedMs < 10_500) return 'race'
-  if (elapsedMs < 14_000) return 'standings'
+  if (elapsedMs < 1_500) return 'detected'
+  if (elapsedMs < 4_800) return 'announcement'
+  if (elapsedMs < 11_200) return 'race'
+  if (elapsedMs < 15_200) return 'standings'
   return 'exit'
 }
 

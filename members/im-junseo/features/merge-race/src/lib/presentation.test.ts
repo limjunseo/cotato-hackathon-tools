@@ -41,8 +41,8 @@ describe('merge race presentation', () => {
     expect(getPresentationPhase(0, true)).toBe('detected')
     expect(getPresentationPhase(1_500, true)).toBe('announcement')
     expect(getPresentationPhase(5_000, true)).toBe('race')
-    expect(getPresentationPhase(11_000, true)).toBe('standings')
-    expect(getPresentationPhase(14_500, true)).toBe('exit')
+    expect(getPresentationPhase(12_000, true)).toBe('standings')
+    expect(getPresentationPhase(15_500, true)).toBe('exit')
     expect(getPresentationPhase(0, false)).toBe('manual')
   })
 

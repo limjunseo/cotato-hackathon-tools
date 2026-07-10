@@ -28,6 +28,36 @@ function Get-GitExecutable {
     throw 'Git executable was not found. Install Git or add it to PATH.'
 }
 
+function Get-NodeExecutable {
+    $candidates = @()
+    $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
+    if ($nodeCommand) {
+        $candidates += $nodeCommand.Source
+    }
+    $candidates += 'C:\Program Files\nodejs\node.exe'
+
+    foreach ($candidate in $candidates) {
+        if (Test-Path $candidate) {
+            return $candidate
+        }
+    }
+
+    throw 'Node.js executable was not found. Install Node.js to synchronize workspace dependencies.'
+}
+
+function Get-CorepackScript {
+    param(
+        [string]$NodeExecutable
+    )
+
+    $candidate = Join-Path (Split-Path $NodeExecutable -Parent) 'node_modules\corepack\dist\corepack.js'
+    if (Test-Path $candidate) {
+        return $candidate
+    }
+
+    throw 'Corepack was not found with Node.js. Install pnpm, then run pnpm install manually.'
+}
+
 $git = Get-GitExecutable
 
 Write-Host 'Checking current branch...'
@@ -36,5 +66,18 @@ Write-Host "Current branch: $branch"
 
 Write-Host 'Pulling latest changes from origin...'
 & $git pull --ff-only origin $branch
+
+if ($LASTEXITCODE -ne 0) {
+    throw 'Git pull failed.'
+}
+
+Write-Host 'Synchronizing workspace dependencies...'
+$node = Get-NodeExecutable
+$corepack = Get-CorepackScript -NodeExecutable $node
+& $node $corepack pnpm install --frozen-lockfile
+
+if ($LASTEXITCODE -ne 0) {
+    throw 'Workspace dependency installation failed.'
+}
 
 Write-Host 'Sync complete.'
