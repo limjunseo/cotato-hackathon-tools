@@ -60,9 +60,27 @@ function Get-CorepackScript {
 
 $git = Get-GitExecutable
 
+function Get-PorcelainStatus {
+    return & $git status --porcelain
+}
+
 Write-Host 'Checking current branch...'
 $branch = (& $git rev-parse --abbrev-ref HEAD).Trim()
 Write-Host "Current branch: $branch"
+
+Write-Host 'Checking for local changes...'
+$status = Get-PorcelainStatus
+$hadStash = $false
+if ($status) {
+    Write-Host 'Local changes detected. Temporarily stashing them before pull...'
+    & $git stash push --include-untracked --quiet --message 'sync-latest auto-stash'
+
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Failed to create an automatic stash. Please stash or commit your changes manually, then run sync again.'
+    }
+
+    $hadStash = $true
+}
 
 Write-Host 'Pulling latest changes from origin...'
 & $git pull --ff-only origin $branch
@@ -78,6 +96,11 @@ $corepack = Get-CorepackScript -NodeExecutable $node
 
 if ($LASTEXITCODE -ne 0) {
     throw 'Workspace dependency installation failed.'
+}
+
+if ($hadStash) {
+    Write-Host 'Local changes were preserved in the stash so the sync could finish safely.'
+    Write-Host 'Use git stash list and git stash pop when you are ready to reapply them.'
 }
 
 Write-Host 'Sync complete.'

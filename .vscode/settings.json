@@ -1,0 +1,5 @@
+{
+  "terminal.integrated.env.windows": {
+    "PATH": "C:\\Program Files\\nodejs;C:\\Program Files\\nodejs\\node_modules\\corepack\\shims;${env:PATH}"
+  }
+}

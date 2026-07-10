@@ -78,7 +78,6 @@ function playWhistle(context: AudioContext, output: AudioNode, time: number, dur
 }
 
 function playFirecrackerPop(context: AudioContext, output: AudioNode, time: number, volume: number) {
-  // 1. White noise pop
   const noise = context.createBufferSource()
   noise.buffer = getNoiseBuffer(context)
   
@@ -97,7 +96,6 @@ function playFirecrackerPop(context: AudioContext, output: AudioNode, time: numb
   noise.start(time)
   noise.stop(time + 0.08)
   
-  // 2. Mid/High pitch transient tone
   const osc = context.createOscillator()
   const oscGain = context.createGain()
   osc.type = 'triangle'
@@ -115,7 +113,6 @@ function playFirecrackerPop(context: AudioContext, output: AudioNode, time: numb
 }
 
 function playExplosion(context: AudioContext, output: AudioNode, time: number, volume: number) {
-  // 1. Low frequency boom
   const osc = context.createOscillator()
   const gain = context.createGain()
   osc.type = 'sine'
@@ -131,7 +128,6 @@ function playExplosion(context: AudioContext, output: AudioNode, time: number, v
   osc.start(time)
   osc.stop(time + 0.655)
   
-  // 2. Main blast noise
   const noise = context.createBufferSource()
   noise.buffer = getNoiseBuffer(context)
   
@@ -151,7 +147,6 @@ function playExplosion(context: AudioContext, output: AudioNode, time: number, v
   noise.start(time)
   noise.stop(time + 0.5)
 
-  // 3. Scattered crackles
   for (let i = 0; i < 6; i++) {
     const delay = 0.2 + Math.random() * 0.3
     const popVolume = volume * (0.15 + Math.random() * 0.15)
@@ -213,7 +208,6 @@ export function playMergeNotificationAudio() {
     playMusicBoxNote(context, output, note.f, now + note.start * beat, note.d * beat, 0.18)
   })
 
-  // Add a festive firecracker pop at the end
   playFirecrackerPop(context, output, now + 6.0 * beat, 0.22)
 
   return () => stopOutput(context, output)
@@ -226,33 +220,26 @@ export function playPresentationAudio(elapsedMs: number) {
   const { context, output } = audio
   const now = context.currentTime + 0.03
 
-  // 1. Detected phase: Whistle rocket and then a big firework explosion
   if (elapsedMs < 1200) {
     const whistleDuration = 0.7
     playWhistle(context, output, now, whistleDuration, 0.15)
     playExplosion(context, output, now + whistleDuration, 0.35)
   }
 
-  // 2. Play the full "Happy Birthday/Congratulations" melody during the presentation
   const beatDuration = 0.35
   const notes = [
-    // Phrase 1
     { f: G4, d: 0.5, start: 0 },
     { f: G4, d: 0.5, start: 0.5 },
     { f: A4, d: 1.0, start: 1.0 },
     { f: G4, d: 1.0, start: 2.0 },
     { f: C5, d: 1.0, start: 3.0 },
     { f: B4, d: 2.0, start: 4.0 },
-    
-    // Phrase 2
     { f: G4, d: 0.5, start: 6.0 },
     { f: G4, d: 0.5, start: 6.5 },
     { f: A4, d: 1.0, start: 7.0 },
     { f: G4, d: 1.0, start: 8.0 },
     { f: D5, d: 1.0, start: 9.0 },
     { f: C5, d: 2.0, start: 10.0 },
-    
-    // Phrase 3
     { f: G4, d: 0.5, start: 12.0 },
     { f: G4, d: 0.5, start: 12.5 },
     { f: G5, d: 1.0, start: 13.0 },
@@ -260,8 +247,6 @@ export function playPresentationAudio(elapsedMs: number) {
     { f: C5, d: 1.0, start: 15.0 },
     { f: B4, d: 1.0, start: 16.0 },
     { f: A4, d: 2.0, start: 17.0 },
-    
-    // Phrase 4
     { f: F5, d: 0.5, start: 19.0 },
     { f: F5, d: 0.5, start: 19.5 },
     { f: E5, d: 1.0, start: 20.0 },
@@ -273,28 +258,21 @@ export function playPresentationAudio(elapsedMs: number) {
   notes.forEach((note) => {
     const noteTime = note.start * beatDuration
     const elapsedSec = elapsedMs / 1000
-    // Only play notes that are scheduled to start after the current playback position
     if (noteTime >= elapsedSec && noteTime < 10.5) {
       const scheduleTime = now + (noteTime - elapsedSec)
       playMusicBoxNote(context, output, note.f, scheduleTime, note.d * beatDuration, 0.16)
     }
   })
 
-  // 3. Play secondary explosion and scattered cracker pops during the announcement phase
   if (elapsedMs < 4500) {
     const successAt = now + Math.max(0, 1200 - elapsedMs) / 1000
-    
-    // Play multiple celebratory firecracker pops in the background
     const popDelays = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
     popDelays.forEach((delay) => {
       playFirecrackerPop(context, output, successAt + delay, 0.15)
     })
-    
-    // Play a secondary firework explosion in the middle of announcement
     playExplosion(context, output, successAt + 0.5, 0.22)
   }
 
-  // 4. Race phase: Keep original racer boost sawtooth tones
   if (elapsedMs < 10500) {
     const boostAt = now + Math.max(0, 4500 - elapsedMs) / 1000
     ;[196, 293.66, 440].forEach((frequency, index) => {
