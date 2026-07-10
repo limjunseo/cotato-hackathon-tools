@@ -11,7 +11,6 @@ const BALL_SCALE = 0.56
 const BALL_RADIUS = 19
 const FLOOR_Y = 3_900
 const WINNER_HOLD_Y = 3_750
-const PARTICIPANTS = Array.from({ length: 41 }, (_, index) => index + 1)
 
 type Peg = {
   x: number
@@ -72,6 +71,7 @@ const POTATO_CHARACTERS = [
 
 type PinballBoardProps = {
   finishOrder: number[]
+  participants: number[]
   phase: DrawPhase
   runId: number
   winnerCount: number
@@ -174,6 +174,7 @@ function collideBalls(balls: BallState[]) {
 
 export function PinballBoard({
   finishOrder,
+  participants,
   phase,
   runId,
   winnerCount,
@@ -195,7 +196,7 @@ export function PinballBoard({
       svgElement.current?.setAttribute('viewBox', `0 ${cameraY} ${BOARD_WIDTH} ${VIEW_HEIGHT}`)
       leaderMarker.current?.setAttribute('opacity', '0')
 
-      PARTICIPANTS.forEach((number, index) => {
+      participants.forEach((number, index) => {
         const element = ballElements.current.get(number)
         const waiting = getWaitingPosition(index)
         if (element) {
@@ -209,16 +210,16 @@ export function PinballBoard({
       return
     }
 
-    if (finishOrder.length !== PARTICIPANTS.length) {
+    if (finishOrder.length !== participants.length) {
       return
     }
 
     const timing = getRaceTiming(winnerCount)
     const rankByNumber = new Map(finishOrder.map((number, rank) => [number, rank]))
     const firstWinnerAt = timing.winnerFinishTimes[0]
-    const balls: BallState[] = PARTICIPANTS.map((number, index) => {
+    const balls: BallState[] = participants.map((number, index) => {
       const waiting = getWaitingPosition(index)
-      const rank = rankByNumber.get(number) ?? PARTICIPANTS.length
+      const rank = rankByNumber.get(number) ?? participants.length
       const isWinner = rank < winnerCount
       const finishAt = isWinner
         ? timing.winnerFinishTimes[rank]
@@ -401,10 +402,10 @@ export function PinballBoard({
 
     animationFrame = requestFrame(animate)
     return () => cancelFrame(animationFrame)
-  }, [finishOrder, phase, runId, winnerCount])
+  }, [finishOrder, participants, phase, runId, winnerCount])
 
   const timerCopy = phase === 'idle'
-    ? '41 READY'
+    ? `${participants.length} READY`
     : phase === 'countdown'
       ? '3 · 2 · 1'
       : phase === 'complete'
@@ -434,7 +435,7 @@ export function PinballBoard({
           ref={svgElement}
           viewBox={`0 0 ${BOARD_WIDTH} ${VIEW_HEIGHT}`}
           role="img"
-          aria-label="선두 감자를 추적하는 세로형 핀볼 레이스 보드"
+          aria-label={`${participants.length}명 감자의 세로형 핀볼 레이스 보드`}
         >
           <defs>
             <radialGradient id="bumper-glow">
@@ -446,7 +447,7 @@ export function PinballBoard({
               <feGaussianBlur stdDeviation="5" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
-            {PARTICIPANTS.map((number) => (
+            {participants.map((number) => (
               <clipPath
                 id={`potato-crop-${runId}-${number}`}
                 clipPathUnits="userSpaceOnUse"
@@ -462,7 +463,7 @@ export function PinballBoard({
 
           <g className="starting-rack" aria-hidden="true">
             <rect x="35" y="28" width="690" height="190" rx="16" />
-            <text x="380" y="52" textAnchor="middle">01—41 · ALL POTATOES ON THE STARTING GRID</text>
+            <text x="380" y="52" textAnchor="middle">{participants.length} POTATOES ON THE STARTING GRID</text>
             <path d="M48 224h664" />
             <path className="start-arrows" d="M330 229l18 16 18-16m28 0 18 16 18-16" />
           </g>
@@ -510,7 +511,7 @@ export function PinballBoard({
           </g>
 
           <g className="potato-balls" aria-hidden="true">
-            {PARTICIPANTS.map((number, index) => {
+            {participants.map((number, index) => {
               const character = POTATO_CHARACTERS[index % POTATO_CHARACTERS.length]
               const scale = Math.min(96 / character.width, 104 / character.height)
               const imageX = -48 + (96 - character.width * scale) / 2 - character.x * scale
@@ -565,7 +566,7 @@ export function PinballBoard({
         )}
         {phase === 'idle' && (
           <div className="board-callout board-callout--ready">
-            <span>41 POTATOES</span>
+            <span>{participants.length} POTATOES</span>
             <strong>긴 코스의 출발선에서 모두 준비 완료</strong>
           </div>
         )}

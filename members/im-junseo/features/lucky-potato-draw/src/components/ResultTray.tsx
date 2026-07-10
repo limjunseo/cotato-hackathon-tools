@@ -2,11 +2,12 @@ import type { DrawPhase } from '../types'
 
 type ResultTrayProps = {
   expectedCount: number
+  participantCount: number
   phase: DrawPhase
   revealedNumbers: number[]
 }
 
-export function ResultTray({ expectedCount, phase, revealedNumbers }: ResultTrayProps) {
+export function ResultTray({ expectedCount, participantCount, phase, revealedNumbers }: ResultTrayProps) {
   const hasStarted = phase !== 'idle' || revealedNumbers.length > 0
 
   return (
@@ -48,7 +49,7 @@ export function ResultTray({ expectedCount, phase, revealedNumbers }: ResultTray
 
       <div className={`result-status result-status--${phase}`} aria-live="polite">
         <i aria-hidden="true" />
-        {phase === 'idle' && '41명 감자 출발 대기 중'}
+        {phase === 'idle' && `${participantCount}명 감자 출발 대기 중`}
         {phase === 'countdown' && '잠시 후 41명이 동시에 출발합니다'}
         {phase === 'running' && `${expectedCount - revealedNumbers.length}자리의 행운 감자가 레이스 중`}
         {phase === 'complete' && `${expectedCount}개 추첨 완료`}

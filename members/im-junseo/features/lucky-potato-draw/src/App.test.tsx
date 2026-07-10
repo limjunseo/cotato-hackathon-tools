@@ -39,4 +39,25 @@ describe('lucky potato draw', () => {
     expect(screen.getByRole('button', { name: '출발 준비 중...' })).toBeDisabled()
     expect(screen.getByLabelText('추첨 개수 직접 입력')).toBeDisabled()
   })
+
+  it('removes specific numbers from the next race and restores them individually', () => {
+    const { container } = render(<App />)
+
+    fireEvent.change(screen.getByLabelText('제외할 번호 입력'), {
+      target: { value: '3, 8 21' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '제외 추가' }))
+
+    expect(screen.getByRole('button', { name: '3번 제외 취소' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '8번 제외 취소' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '21번 제외 취소' })).toBeInTheDocument()
+    expect(screen.getByText('3명 제외 · 38명 참가')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '38명 출발시키기' })).toBeInTheDocument()
+    expect(container.querySelectorAll('.potato-ball')).toHaveLength(38)
+
+    fireEvent.click(screen.getByRole('button', { name: '8번 제외 취소' }))
+
+    expect(screen.queryByRole('button', { name: '8번 제외 취소' })).not.toBeInTheDocument()
+    expect(container.querySelectorAll('.potato-ball')).toHaveLength(39)
+  })
 })
