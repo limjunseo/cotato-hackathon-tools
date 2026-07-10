@@ -1,6 +1,15 @@
 import { useEffect, useEffectEvent, useRef } from 'react'
 import potatoWorld from '../assets/potato-world.png'
-import { PINBALL_DRAW_DURATION_MS, RACE_DURATION_MS, getRaceTiming } from '../lib/pinball'
+import {
+  PINBALL_DRAW_DURATION_MS,
+  RACE_DRAMA,
+  RACE_DURATION_MS,
+  getRaceDramaAt,
+  getRaceDramaProfile,
+  getRaceTiming,
+} from '../lib/pinball'
+import type { RaceDramaProfile } from '../lib/pinball'
+import { POTATO_CHARACTERS } from '../lib/potatoCharacters'
 import type { DrawPhase } from '../types'
 
 const BOARD_WIDTH = 760
@@ -20,6 +29,7 @@ type Peg = {
 }
 
 type BallState = {
+  drama: RaceDramaProfile
   number: number
   rank: number
   finishAt: number
@@ -52,22 +62,6 @@ const BUMPERS: Peg[] = [
 
 const PEGS = [...COURSE_PEGS, ...BUMPERS]
 const COURSE_MARKERS = [880, 1_580, 2_280, 2_980, 3_620]
-
-const POTATO_CHARACTERS = [
-  { x: 110, y: 55, width: 138, height: 150 },
-  { x: 345, y: 70, width: 150, height: 155 },
-  { x: 552, y: 45, width: 165, height: 175 },
-  { x: 95, y: 242, width: 145, height: 160 },
-  { x: 292, y: 246, width: 182, height: 150 },
-  { x: 465, y: 200, width: 142, height: 170 },
-  { x: 114, y: 397, width: 188, height: 165 },
-  { x: 334, y: 405, width: 178, height: 160 },
-  { x: 522, y: 365, width: 150, height: 165 },
-  { x: 98, y: 565, width: 142, height: 155 },
-  { x: 354, y: 580, width: 160, height: 170 },
-  { x: 198, y: 735, width: 165, height: 175 },
-  { x: 526, y: 735, width: 150, height: 170 },
-] as const
 
 type PinballBoardProps = {
   finishOrder: number[]
@@ -187,6 +181,8 @@ export function PinballBoard({
   const timerElement = useRef<HTMLSpanElement>(null)
   const cameraLabel = useRef<HTMLElement>(null)
   const cameraProgress = useRef<HTMLElement>(null)
+  const liveRankElements = useRef<Array<HTMLLIElement | null>>([])
+  const overtakeCounter = useRef<HTMLElement>(null)
   const reportLanded = useEffectEvent(onNumberLanded)
   const reportComplete = useEffectEvent(onComplete)
 
@@ -214,20 +210,18 @@ export function PinballBoard({
       return
     }
 
-    const timing = getRaceTiming(winnerCount)
+    const timing = getRaceTiming(winnerCount, participants.length)
     const rankByNumber = new Map(finishOrder.map((number, rank) => [number, rank]))
     const firstWinnerAt = timing.winnerFinishTimes[0]
     const balls: BallState[] = participants.map((number, index) => {
       const waiting = getWaitingPosition(index)
       const rank = rankByNumber.get(number) ?? participants.length
-      const isWinner = rank < winnerCount
-      const finishAt = isWinner
-        ? timing.winnerFinishTimes[rank]
-        : timing.raceDuration + 8_000 + (rank - winnerCount) * 220
-      const gravityTarget = isWinner ? WINNER_HOLD_Y - rank * 30 : FLOOR_Y
-      const gravityDuration = isWinner ? firstWinnerAt : finishAt
+      const finishAt = timing.finishTimes[rank]
+      const gravityTarget = WINNER_HOLD_Y
+      const gravityDuration = Math.max(firstWinnerAt, finishAt)
 
       return {
+        drama: getRaceDramaProfile(number, runId),
         number,
         rank,
         finishAt,
@@ -253,10 +247,12 @@ export function PinballBoard({
     let animationFrame = 0
     let startTime = 0
     let previousTime = 0
-    let finishedWinnerCount = 0
+    let finishedBallCount = 0
     let currentCameraY = 0
+    let liveLeaderNumber: number | null = null
+    let leaderChangeCount = 0
 
-    const finishWinner = (ball: BallState) => {
+    const finishBall = (ball: BallState) => {
       ball.finished = true
       ball.y = FLOOR_Y
       const element = ballElements.current.get(ball.number)
@@ -267,8 +263,10 @@ export function PinballBoard({
         )
         element.style.opacity = '0'
       }
-      finishedWinnerCount += 1
-      reportLanded(ball.number)
+      finishedBallCount += 1
+      if (ball.rank < winnerCount) {
+        reportLanded(ball.number)
+      }
     }
 
     const animate = (time: number) => {
@@ -279,6 +277,7 @@ export function PinballBoard({
 
       const elapsed = time - startTime
       const deltaTime = Math.min((time - previousTime) / 1000, 0.032)
+      const raceProgress = Math.max(0, Math.min(1, elapsed / timing.raceDuration))
       previousTime = time
 
       if (timerElement.current) {
@@ -294,19 +293,27 @@ export function PinballBoard({
             return
           }
 
-          const isWinner = ball.rank < winnerCount
-          const holdY = WINNER_HOLD_Y - ball.rank * 30
+          const holdY = WINNER_HOLD_Y
           const releaseAt = ball.finishAt - 850
-          const finishPull = isWinner && elapsed >= releaseAt ? 720 : 0
+          const finishPull = elapsed >= releaseAt ? 720 : 0
+          const drama = getRaceDramaAt(ball.drama, raceProgress)
+          const finishLock = Math.max(0, Math.min(
+            1,
+            (elapsed - (releaseAt - RACE_DRAMA.finishFocusWindowMs))
+              / RACE_DRAMA.finishFocusWindowMs,
+          ))
 
-          if (isWinner && elapsed < releaseAt) {
-            const guideProgress = Math.min(1, elapsed / Math.max(1, releaseAt))
+          if (elapsed < releaseAt) {
+            const guideProgress = Math.max(0, Math.min(
+              1,
+              elapsed / Math.max(1, releaseAt) + drama.progressOffset * (1 - finishLock),
+            ))
             const easedProgress = 1 - (1 - guideProgress) ** 2
             const guidedY = ball.startY + (holdY - ball.startY) * easedProgress
             ball.y = Math.max(ball.y, guidedY)
           }
 
-          ball.vy += (ball.gravity + finishPull) * step
+          ball.vy += (ball.gravity * drama.gravityMultiplier + finishPull) * step
           ball.vx *= 0.999
           ball.vx = Math.max(-235, Math.min(235, ball.vx))
           ball.vy = Math.min(520, ball.vy)
@@ -328,7 +335,7 @@ export function PinballBoard({
 
           PEGS.forEach((peg) => collideWithPeg(ball, peg))
 
-          if (isWinner && ball.y >= holdY && elapsed < releaseAt) {
+          if (ball.y >= holdY && elapsed < releaseAt) {
             ball.y = holdY
             ball.vy = -Math.max(30, Math.min(72, Math.abs(ball.vy) * 0.2))
           } else if (ball.y >= FLOOR_Y) {
@@ -356,18 +363,62 @@ export function PinballBoard({
         }
       })
 
-      const dueWinners = balls
+      const dueBalls = balls
         .filter((ball) => (
           !ball.finished
-          && ball.rank < winnerCount
           && elapsed >= ball.finishAt
         ))
         .sort((first, second) => first.rank - second.rank)
-      dueWinners.forEach(finishWinner)
+      dueBalls.forEach(finishBall)
 
-      const focusRank = Math.min(finishedWinnerCount, winnerCount - 1)
-      const focusNumber = finishOrder[focusRank]
-      const focusBall = balls.find((ball) => ball.number === focusNumber)
+      const liveOrder = balls
+        .filter((ball) => !ball.finished)
+        .sort((first, second) => {
+          const firstProgress = (first.y - first.startY) / (FLOOR_Y - first.startY)
+          const secondProgress = (second.y - second.startY) / (FLOOR_Y - second.startY)
+          return secondProgress - firstProgress || second.vy - first.vy
+        })
+      const candidateLeader = liveOrder[0]
+      const currentLeader = balls.find((ball) => ball.number === liveLeaderNumber)
+      const candidateProgress = candidateLeader
+        ? (candidateLeader.y - candidateLeader.startY) / (FLOOR_Y - candidateLeader.startY)
+        : 0
+      const currentLeaderProgress = currentLeader && !currentLeader.finished
+        ? (currentLeader.y - currentLeader.startY) / (FLOOR_Y - currentLeader.startY)
+        : -1
+
+      if (
+        candidateLeader
+        && (
+          liveLeaderNumber === null
+          || currentLeader?.finished
+          || candidateProgress > currentLeaderProgress + RACE_DRAMA.leaderChangeThreshold
+        )
+      ) {
+        if (liveLeaderNumber !== null && liveLeaderNumber !== candidateLeader.number) {
+          leaderChangeCount += 1
+        }
+        liveLeaderNumber = candidateLeader.number
+      }
+
+      liveRankElements.current.forEach((element, index) => {
+        const ball = liveOrder[index]
+        if (element) {
+          element.textContent = ball
+            ? `${finishedBallCount + index + 1}위 · #${ball.number}`
+            : '도착 완료'
+        }
+      })
+      if (overtakeCounter.current) {
+        overtakeCounter.current.textContent = `선두 교체 ${leaderChangeCount}회`
+      }
+
+      const nextFinisher = balls.find((ball) => !ball.finished && ball.rank === finishedBallCount)
+      const finishIsClose = nextFinisher
+        ? nextFinisher.finishAt - elapsed <= RACE_DRAMA.finishFocusWindowMs
+        : false
+      const liveLeader = balls.find((ball) => ball.number === liveLeaderNumber && !ball.finished)
+      const focusBall = finishIsClose ? nextFinisher : liveLeader ?? candidateLeader
       if (focusBall) {
         const desiredCameraY = Math.min(
           MAX_CAMERA_Y,
@@ -385,14 +436,16 @@ export function PinballBoard({
           `translate(${focusBall.x.toFixed(2)} ${focusBall.y.toFixed(2)})`,
         )
         if (cameraLabel.current) {
-          cameraLabel.current.textContent = `${focusRank + 1}위 추적 · #${focusNumber}`
+          cameraLabel.current.textContent = finishIsClose
+            ? `${focusBall.rank + 1}위 골인 임박 · #${focusBall.number}`
+            : `실시간 선두 · #${focusBall.number}`
         }
         if (cameraProgress.current) {
           cameraProgress.current.style.width = `${Math.min(100, currentCameraY / MAX_CAMERA_Y * 100)}%`
         }
       }
 
-      if (finishedWinnerCount >= winnerCount) {
+      if (finishedBallCount >= participants.length) {
         reportComplete()
         return
       }
@@ -560,7 +613,18 @@ export function PinballBoard({
         {phase === 'running' && (
           <div className="camera-hud" aria-live="polite">
             <span>LIVE LEADER CAMERA</span>
-            <strong ref={cameraLabel}>1위 추적 중</strong>
+            <strong ref={cameraLabel}>실시간 선두 추적 중</strong>
+            <small ref={overtakeCounter}>선두 교체 0회</small>
+            <ol aria-label="실시간 선두 순위">
+              {Array.from({ length: 3 }, (_, index) => (
+                <li
+                  ref={(element) => { liveRankElements.current[index] = element }}
+                  key={index}
+                >
+                  {index + 1}위 · 집계 중
+                </li>
+              ))}
+            </ol>
             <div><i ref={cameraProgress} /></div>
           </div>
         )}
@@ -577,8 +641,8 @@ export function PinballBoard({
         )}
         {phase === 'complete' && (
           <div className="board-complete" role="status">
-            <span>WINNERS!</span>
-            <strong>순위 감자가 차례대로 골인했습니다</strong>
+            <span>ALL ARRIVED!</span>
+            <strong>당첨 감자 뒤로 모든 감자가 골인했습니다</strong>
           </div>
         )}
       </div>

@@ -1,0 +1,15 @@
+export const POTATO_CHARACTERS = [
+  { x: 110, y: 55, width: 138, height: 150 },
+  { x: 345, y: 70, width: 150, height: 155 },
+  { x: 552, y: 45, width: 165, height: 175 },
+  { x: 95, y: 242, width: 145, height: 160 },
+  { x: 292, y: 246, width: 182, height: 150 },
+  { x: 465, y: 200, width: 142, height: 170 },
+  { x: 114, y: 397, width: 188, height: 165 },
+  { x: 334, y: 405, width: 178, height: 160 },
+  { x: 522, y: 365, width: 150, height: 165 },
+  { x: 98, y: 565, width: 142, height: 155 },
+  { x: 354, y: 580, width: 160, height: 170 },
+  { x: 198, y: 735, width: 165, height: 175 },
+  { x: 526, y: 735, width: 150, height: 170 },
+] as const
