@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { createMergeRacePlugin } from './vite-plugins/merge-race'
+import { resolveGithubToken } from './vite-plugins/merge-race/github-token'
 
 const portalDir = fileURLToPath(new URL('.', import.meta.url))
 const repoRoot = path.resolve(portalDir, '../..')
@@ -34,6 +35,58 @@ async function findGitExecutable() {
   throw new Error('Git executable not found. Set GIT_EXE or install Git.')
 }
 
+type CommandResult = {
+  code: number | null
+  stdout: string
+  stderr: string
+}
+
+function runCommand(command: string, args: string[]): Promise<CommandResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: repoRoot,
+      windowsHide: true,
+    })
+
+    let stdout = ''
+    let stderr = ''
+
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString()
+    })
+
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString()
+    })
+
+    child.on('error', reject)
+    child.on('close', (code) => {
+      resolve({ code, stdout: stdout.trim(), stderr: stderr.trim() })
+    })
+  })
+}
+
+async function installWorkspaceDependencies() {
+  const nodeDirectory = path.dirname(process.execPath)
+  const corepackCandidates = process.platform === 'win32'
+    ? [path.join(nodeDirectory, 'node_modules', 'corepack', 'dist', 'corepack.js')]
+    : [
+        path.resolve(nodeDirectory, '../lib/node_modules/corepack/dist/corepack.js'),
+        path.join(nodeDirectory, 'node_modules', 'corepack', 'dist', 'corepack.js'),
+      ]
+
+  for (const corepack of corepackCandidates) {
+    try {
+      await access(corepack)
+      return runCommand(process.execPath, [corepack, 'pnpm', 'install', '--frozen-lockfile'])
+    } catch {
+      continue
+    }
+  }
+
+  return runCommand('pnpm', ['install', '--frozen-lockfile'])
+}
+
 function createManualSyncPlugin(): Plugin {
   return {
     name: 'manual-sync-endpoint',
@@ -48,56 +101,14 @@ function createManualSyncPlugin(): Plugin {
 
         try {
           const git = await findGitExecutable()
-          const branch = await new Promise<string>((resolve, reject) => {
-            const branchProcess = spawn(git, ['rev-parse', '--abbrev-ref', 'HEAD'], {
-              cwd: repoRoot,
-              windowsHide: true,
-            })
+          const branchResult = await runCommand(git, ['rev-parse', '--abbrev-ref', 'HEAD'])
 
-            let stdout = ''
-            let stderr = ''
+          if (branchResult.code !== 0) {
+            throw new Error(branchResult.stderr || 'Failed to detect branch.')
+          }
 
-            branchProcess.stdout.on('data', (chunk) => {
-              stdout += chunk.toString()
-            })
-
-            branchProcess.stderr.on('data', (chunk) => {
-              stderr += chunk.toString()
-            })
-
-            branchProcess.on('error', reject)
-            branchProcess.on('close', (code) => {
-              if (code !== 0) {
-                reject(new Error(stderr.trim() || 'Failed to detect branch.'))
-                return
-              }
-
-              resolve(stdout.trim())
-            })
-          })
-
-          const pullResult = await new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
-            const pullProcess = spawn(git, ['pull', '--ff-only', 'origin', branch], {
-              cwd: repoRoot,
-              windowsHide: true,
-            })
-
-            let stdout = ''
-            let stderr = ''
-
-            pullProcess.stdout.on('data', (chunk) => {
-              stdout += chunk.toString()
-            })
-
-            pullProcess.stderr.on('data', (chunk) => {
-              stderr += chunk.toString()
-            })
-
-            pullProcess.on('error', reject)
-            pullProcess.on('close', (code) => {
-              resolve({ code, stdout: stdout.trim(), stderr: stderr.trim() })
-            })
-          })
+          const branch = branchResult.stdout
+          const pullResult = await runCommand(git, ['pull', '--ff-only', 'origin', branch])
 
           if (pullResult.code !== 0) {
             response.statusCode = 500
@@ -106,9 +117,18 @@ function createManualSyncPlugin(): Plugin {
             return
           }
 
+          const installResult = await installWorkspaceDependencies()
+
+          if (installResult.code !== 0) {
+            response.statusCode = 500
+            response.setHeader('content-type', 'application/json; charset=utf-8')
+            response.end(JSON.stringify({ ok: false, error: installResult.stderr || installResult.stdout || 'Workspace dependency installation failed' }))
+            return
+          }
+
           response.statusCode = 200
           response.setHeader('content-type', 'application/json; charset=utf-8')
-          response.end(JSON.stringify({ ok: true, branch, output: pullResult.stdout }))
+          response.end(JSON.stringify({ ok: true, branch, output: pullResult.stdout, installOutput: installResult.stdout }))
         } catch (error) {
           response.statusCode = 500
           response.setHeader('content-type', 'application/json; charset=utf-8')
@@ -128,7 +148,7 @@ export default defineConfig(({ mode }) => {
       createManualSyncPlugin(),
       createMergeRacePlugin({
         repoRoot,
-        token: process.env.GITHUB_TOKEN || environment.GITHUB_TOKEN,
+        token: resolveGithubToken(repoRoot, process.env.GITHUB_TOKEN || environment.GITHUB_TOKEN),
       }),
     ],
     server: {

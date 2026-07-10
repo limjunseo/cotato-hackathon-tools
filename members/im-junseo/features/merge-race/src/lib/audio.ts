@@ -17,7 +17,7 @@ function tone(
   oscillator.type = type
   oscillator.frequency.setValueAtTime(frequency, startsAt)
   gain.gain.setValueAtTime(0.0001, startsAt)
-  gain.gain.exponentialRampToValueAtTime(volume, startsAt + 0.015)
+  gain.gain.exponentialRampToValueAtTime(volume, startsAt + 0.035)
   gain.gain.exponentialRampToValueAtTime(0.0001, startsAt + duration)
   oscillator.connect(gain)
   gain.connect(output)
@@ -41,8 +41,8 @@ function createOutput() {
 }
 
 function stopOutput(context: AudioContext, output: GainNode) {
-  output.gain.setTargetAtTime(0.0001, context.currentTime, 0.04)
-  window.setTimeout(() => output.disconnect(), 160)
+  output.gain.setTargetAtTime(0.0001, context.currentTime, 0.18)
+  window.setTimeout(() => output.disconnect(), 520)
 }
 
 export function playMergeNotificationAudio() {
@@ -51,9 +51,12 @@ export function playMergeNotificationAudio() {
 
   const { context, output } = audio
   const now = context.currentTime + 0.03
-  tone(context, output, 659.25, now, 0.13, 0.18, 'square')
-  tone(context, output, 880, now + 0.12, 0.16, 0.2, 'square')
-  tone(context, output, 1_046.5, now + 0.26, 0.24, 0.2, 'triangle')
+  tone(context, output, 146.83, now, 0.32, 0.10, 'sawtooth')
+  tone(context, output, 196, now + 0.16, 0.34, 0.12, 'square')
+  tone(context, output, 246.94, now + 0.32, 0.38, 0.14, 'triangle')
+  tone(context, output, 329.63, now + 0.54, 0.46, 0.16, 'triangle')
+  tone(context, output, 440, now + 0.84, 0.54, 0.18, 'sine')
+  tone(context, output, 659.25, now + 1.18, 0.64, 0.2, 'triangle')
 
   return () => stopOutput(context, output)
 }
