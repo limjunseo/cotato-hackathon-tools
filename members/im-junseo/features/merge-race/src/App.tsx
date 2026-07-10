@@ -5,7 +5,7 @@ import { LiveStatus } from './components/LiveStatus'
 import { MergeAnnouncement } from './components/MergeAnnouncement'
 import { RaceBoard } from './components/RaceBoard'
 import { EMPTY_TEAMS } from './data/teams'
-import { playPresentationAudio } from './lib/audio'
+import { playMergeNotificationAudio, playPresentationAudio } from './lib/audio'
 import {
   ACTIVE_PRESENTATION_KEY,
   LATEST_STATE_KEY,
@@ -27,6 +27,8 @@ const EMPTY_STATE: MergeRaceState = {
   serverTime: new Date(0).toISOString(),
   teams: EMPTY_TEAMS,
 }
+
+const LIVE_NOTIFICATION_DURATION_MS = 4_500
 
 type MergeAudioWindow = Window & { __cotatoMergeAudioContext?: AudioContext }
 
@@ -89,7 +91,10 @@ export default function App() {
           if (newEvents.length > 0) {
             setManualBatch(createBatch(newEvents, `manual-${nextState.latestSequence}`))
             if (manualBatchTimer.current) window.clearTimeout(manualBatchTimer.current)
-            manualBatchTimer.current = window.setTimeout(() => setManualBatch(null), 10_500)
+            manualBatchTimer.current = window.setTimeout(
+              () => setManualBatch(null),
+              LIVE_NOTIFICATION_DURATION_MS,
+            )
           }
         }
         previousSequence.current = nextState.latestSequence
@@ -126,6 +131,13 @@ export default function App() {
     setSoundReady(stopAudio !== null)
     return () => stopAudio?.()
   }, [presentation?.presentationId])
+
+  useEffect(() => {
+    if (!manualBatch || presentation) return
+    const stopAudio = playMergeNotificationAudio()
+    setSoundReady(stopAudio !== null)
+    return () => stopAudio?.()
+  }, [manualBatch?.id, presentation])
 
   useEffect(() => {
     const onFullscreenChange = () => setIsFullscreen(document.fullscreenElement === appElement.current)
@@ -187,7 +199,7 @@ export default function App() {
 
       <footer className="merge-footer">
         <span>NEXT GITHUB SYNC · 5 SEC</span>
-        <span>DEFAULT BRANCH MERGES ONLY</span>
+        <span>MERGED PR COMMITS ONLY</span>
         <span>LIVE SYSTEM · 6 TEAMS</span>
       </footer>
 

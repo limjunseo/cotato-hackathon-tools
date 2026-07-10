@@ -11,6 +11,7 @@ import { useMergeRaceOrchestrator } from './useMergeRaceOrchestrator'
 
 const mergeEvent: MergeEvent = {
   baseRefName: 'main',
+  commitCount: 4,
   id: '8th-COKERTHON/client-team3#12',
   mergedAt: '2026-07-11T00:00:00.000Z',
   prNumber: 12,
@@ -31,12 +32,12 @@ const state: MergeRaceState = {
   ok: true,
   serverTime: '2026-07-11T00:00:00.000Z',
   teams: Array.from({ length: 6 }, (_, index) => ({
-    client: index === 2 ? 1 : 0,
+    client: index === 2 ? 4 : 0,
     color: '#fff',
     name: `${index + 1}팀`,
     server: 0,
     teamId: index + 1,
-    total: index === 2 ? 1 : 0,
+    total: index === 2 ? 4 : 0,
   })),
 }
 
@@ -71,6 +72,19 @@ describe('useMergeRaceOrchestrator', () => {
 
     await waitFor(() => expect(readPendingEvents()).toHaveLength(1))
     expect(navigate).not.toHaveBeenCalled()
+    expect(readActivePresentation()).toBeNull()
+  })
+
+  it('leaves a merge on the live race screen for the feature to announce in place', async () => {
+    const navigate = vi.fn()
+    renderHook(() => useMergeRaceOrchestrator({
+      navigate,
+      path: '/features/merge-race',
+    }))
+
+    await waitFor(() => expect(window.sessionStorage.getItem(LAST_SEQUENCE_KEY)).toBe('1'))
+    expect(navigate).not.toHaveBeenCalled()
+    expect(readPendingEvents()).toEqual([])
     expect(readActivePresentation()).toBeNull()
   })
 

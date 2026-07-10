@@ -2,6 +2,7 @@ export type RepositoryType = 'client' | 'server'
 
 export type MergeEvent = {
   baseRefName: string
+  commitCount: number
   id: string
   mergedAt: string
   prNumber: number
@@ -23,7 +24,8 @@ export type TeamScore = {
 }
 
 export type TeamChange = {
-  count: number
+  commitCount: number
+  mergeCount: number
   teamId: number
   teamName: string
 }
@@ -33,6 +35,7 @@ export type MergeBatch = {
   events: MergeEvent[]
   id: string
   teamChanges: TeamChange[]
+  totalCommits: number
   totalMerges: number
 }
 

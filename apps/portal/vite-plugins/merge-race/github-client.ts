@@ -134,6 +134,7 @@ export class GitHubMergeClient {
         search: {
           nodes: Array<{
             baseRefName: string
+            commits: { totalCount: number }
             mergedAt: string | null
             number: number
             repository: { nameWithOwner: string }
@@ -149,6 +150,7 @@ export class GitHubMergeClient {
                 number
                 mergedAt
                 baseRefName
+                commits { totalCount }
                 url
                 repository { nameWithOwner }
               }
@@ -167,6 +169,7 @@ export class GitHubMergeClient {
 
         return [{
           baseRefName: pullRequest.baseRefName,
+          commitCount: pullRequest.commits.totalCount,
           mergedAt: pullRequest.mergedAt,
           number: pullRequest.number,
           repositoryFullName: pullRequest.repository.nameWithOwner,

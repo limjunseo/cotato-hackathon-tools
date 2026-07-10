@@ -9,6 +9,7 @@ export type TeamConfig = {
 
 export type RawMergedPullRequest = {
   baseRefName: string
+  commitCount: number
   mergedAt: string | null
   number: number
   repositoryFullName: string
@@ -17,6 +18,7 @@ export type RawMergedPullRequest = {
 
 export type MergeEvent = {
   baseRefName: string
+  commitCount: number
   id: string
   mergedAt: string
   prNumber: number

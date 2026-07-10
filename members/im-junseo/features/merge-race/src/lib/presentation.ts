@@ -16,7 +16,8 @@ export function createBatch(events: MergeEvent[], id: string = crypto.randomUUID
   events.forEach((event) => {
     const current = changes.get(event.teamId)
     changes.set(event.teamId, {
-      count: (current?.count ?? 0) + 1,
+      commitCount: (current?.commitCount ?? 0) + event.commitCount,
+      mergeCount: (current?.mergeCount ?? 0) + 1,
       teamId: event.teamId,
       teamName: event.teamName,
     })
@@ -27,6 +28,7 @@ export function createBatch(events: MergeEvent[], id: string = crypto.randomUUID
     events,
     id,
     teamChanges: [...changes.values()].sort((first, second) => first.teamId - second.teamId),
+    totalCommits: events.reduce((total, event) => total + event.commitCount, 0),
     totalMerges: events.length,
   }
 }
@@ -52,9 +54,9 @@ export function getPresentationPhase(elapsedMs: number, automatic: boolean): Pre
 export function buildAnnouncement(batch: MergeBatch) {
   if (batch.teamChanges.length === 1) {
     const change = batch.teamChanges[0]
-    return change.count === 1
+    return change.mergeCount === 1
       ? `${change.teamName}이 MERGE했습니다!`
-      : `${change.teamName}이 ${change.count}건 MERGE했습니다!`
+      : `${change.teamName}이 ${change.mergeCount}건 MERGE했습니다!`
   }
 
   const names = batch.teamChanges.map((change) => change.teamName).join(', ')
@@ -62,7 +64,12 @@ export function buildAnnouncement(batch: MergeBatch) {
 }
 
 export function getTeamChange(batch: MergeBatch | null, teamId: number) {
-  return batch?.teamChanges.find((change) => change.teamId === teamId)?.count ?? 0
+  return batch?.teamChanges.find((change) => change.teamId === teamId)?.commitCount ?? 0
+}
+
+export function getRaceProgress(score: number) {
+  if (score <= 0) return 0
+  return (score / (score + 5)) * 72
 }
 
 export function getRankedTeams(teams: TeamScore[]) {
@@ -81,7 +88,7 @@ export function getRankedTeams(teams: TeamScore[]) {
 }
 
 export function subtractBatchFromScores(teams: TeamScore[], teamChanges: TeamChange[]) {
-  const changes = new Map(teamChanges.map((change) => [change.teamId, change.count]))
+  const changes = new Map(teamChanges.map((change) => [change.teamId, change.commitCount]))
   return teams.map((team) => {
     const count = changes.get(team.teamId) ?? 0
     return { ...team, total: Math.max(0, team.total - count) }

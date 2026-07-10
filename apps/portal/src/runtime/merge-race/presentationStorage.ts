@@ -70,7 +70,8 @@ function createBatch(events: MergeEvent[]): MergeBatch {
   events.forEach((event) => {
     const current = changes.get(event.teamId)
     changes.set(event.teamId, {
-      count: (current?.count ?? 0) + 1,
+      commitCount: (current?.commitCount ?? 0) + event.commitCount,
+      mergeCount: (current?.mergeCount ?? 0) + 1,
       teamId: event.teamId,
       teamName: event.teamName,
     })
@@ -81,6 +82,7 @@ function createBatch(events: MergeEvent[]): MergeBatch {
     events,
     id: crypto.randomUUID(),
     teamChanges: [...changes.values()].sort((first, second) => first.teamId - second.teamId),
+    totalCommits: events.reduce((total, event) => total + event.commitCount, 0),
     totalMerges: events.length,
   }
 }
@@ -94,7 +96,7 @@ export function createPresentation(
   const serverChanges = new Map<number, number>()
   events.forEach((event) => {
     const changes = event.repositoryType === 'client' ? clientChanges : serverChanges
-    changes.set(event.teamId, (changes.get(event.teamId) ?? 0) + 1)
+    changes.set(event.teamId, (changes.get(event.teamId) ?? 0) + event.commitCount)
   })
 
   return {
