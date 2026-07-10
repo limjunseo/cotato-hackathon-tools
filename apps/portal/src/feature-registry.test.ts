@@ -14,6 +14,7 @@ describe('feature registry', () => {
     const timer = findFeatureByPath('/features/hackathon-timer')
     const luckyPotato = findFeatureByPath('/features/lucky-potato-draw')
     const mergeRace = findFeatureByPath('/features/merge-race')
+    const potatoNameDraw = findFeatureByPath('/features/potato-name-draw')
 
     expect(timer?.id).toBe('hackathon-timer')
     expect(timer?.owner).toEqual({ id: 'im-junseo', name: '임준서' })
@@ -21,12 +22,15 @@ describe('feature registry', () => {
     expect(luckyPotato?.owner).toEqual({ id: 'im-junseo', name: '임준서' })
     expect(mergeRace?.id).toBe('merge-race')
     expect(mergeRace?.owner).toEqual({ id: 'im-junseo', name: '임준서' })
-    expect(features).toHaveLength(3)
+    expect(potatoNameDraw?.id).toBe('potato-name-draw')
+    expect(potatoNameDraw?.owner).toEqual({ id: 'im-junseo', name: '임준서' })
+    expect(features).toHaveLength(4)
   })
 
   it('finds orchestration targets by stable feature id', () => {
     expect(findFeatureById('hackathon-timer')?.path).toBe('/features/hackathon-timer')
     expect(findFeatureById('lucky-potato-draw')?.path).toBe('/features/lucky-potato-draw')
     expect(findFeatureById('merge-race')?.path).toBe('/features/merge-race')
+    expect(findFeatureById('potato-name-draw')?.path).toBe('/features/potato-name-draw')
   })
 })

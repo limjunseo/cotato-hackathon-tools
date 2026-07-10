@@ -1,0 +1,23 @@
+:root {
+  font-family: Inter, Pretendard, 'Malgun Gothic', sans-serif;
+  color: #f9efd2;
+  background: #142519;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; min-width: 0; min-height: 100%; margin: 0; }
+body { min-height: 100vh; overflow-x: hidden; }
+button, textarea { font: inherit; }
+button { color: inherit; }
+::selection { color: #2a1b0e; background: #ffd676; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
