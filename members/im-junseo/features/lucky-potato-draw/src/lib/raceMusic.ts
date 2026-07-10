@@ -6,16 +6,19 @@ export type RaceMusicSession = {
   stop: () => void
 }
 
-const BEAT_SECONDS = 0.28
+const BEAT_SECONDS = 0.16
 const LOOP_BEATS = 16
 const LOOP_SECONDS = BEAT_SECONDS * LOOP_BEATS
 const MELODY = [
-  523.25, 659.25, 783.99, 659.25,
-  587.33, 698.46, 880, 698.46,
-  659.25, 783.99, 987.77, 783.99,
-  587.33, 698.46, 783.99, 523.25,
+  587.33, 698.46, 880.00, 698.46, // D5, F5, A5, F5
+  783.99, 880.00, 932.33, 880.00, // G5, A5, Bb5, A5
+  698.46, 783.99, 880.00, 783.99, // F5, G5, A5, G5
+  587.33, 659.25, 698.46, 554.37, // D5, E5, F5, C#5 (긴장감)
 ]
-const BASS = [130.81, 146.83, 164.81, 146.83, 130.81, 164.81, 146.83, 196]
+const BASS = [
+  146.83, 146.83, 174.61, 196.00, // D3, D3, F3, G3
+  220.00, 220.00, 233.08, 110.00, // A3, A3, Bb3, A2
+]
 
 function scheduleTone(
   context: AudioContext,
@@ -54,7 +57,7 @@ export function playRaceMusic(): RaceMusicSession | null {
   const context = new AudioContextClass()
   const master = context.createGain()
   master.gain.setValueAtTime(0.0001, context.currentTime)
-  master.gain.exponentialRampToValueAtTime(0.075, context.currentTime + 0.08)
+  master.gain.exponentialRampToValueAtTime(0.30, context.currentTime + 0.08)
   master.connect(context.destination)
   void context.resume().catch(() => undefined)
 
@@ -70,7 +73,7 @@ export function playRaceMusic(): RaceMusicSession | null {
         startAt + index * BEAT_SECONDS,
         BEAT_SECONDS * 0.72,
         'square',
-        index % 4 === 0 ? 0.19 : 0.13,
+        index % 4 === 0 ? 0.38 : 0.28,
       )
     })
 
@@ -82,7 +85,7 @@ export function playRaceMusic(): RaceMusicSession | null {
         startAt + index * BEAT_SECONDS * 2,
         BEAT_SECONDS * 1.55,
         'triangle',
-        0.17,
+        0.33,
       )
     })
 
@@ -94,7 +97,7 @@ export function playRaceMusic(): RaceMusicSession | null {
         startAt + index * BEAT_SECONDS * 2,
         0.035,
         'square',
-        index % 4 === 0 ? 0.06 : 0.035,
+        index % 4 === 0 ? 0.15 : 0.09,
       )
     })
   }
