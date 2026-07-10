@@ -1,7 +1,14 @@
 import { randomUUID } from 'node:crypto'
 import { prepareBootstrap } from './bootstrap'
 import { GitHubClientError, GitHubMergeClient } from './github-client'
-import { calculateScores, createEmptyScores, selectValidMerges } from './score-engine'
+import {
+  applyRepositoryCommitDeltas,
+  calculateScores,
+  createEmptyScores,
+  getDefaultBranches,
+  haveAffectedCommitCountsAdvanced,
+  selectValidMerges,
+} from './score-engine'
 import { loadRuntimeState, saveRuntimeState } from './merge-store'
 import {
   MERGE_LOOKBACK_MS,
@@ -11,6 +18,7 @@ import {
 import type {
   MergeEvent,
   MergeRaceServerState,
+  RepositorySnapshot,
   RuntimeState,
   TeamScore,
 } from './types'
@@ -33,10 +41,10 @@ export class MergePoller {
   private initializedAt = new Date().toISOString()
   private lastSuccessfulPollAt: string | null = null
   private latestSequence = 0
-  private mergeById = new Map<string, Omit<MergeEvent, 'sequence'>>()
   private nextRetryAt: string | null = null
   private pollInFlight: Promise<void> | null = null
   private recentEvents: MergeEvent[] = []
+  private repositorySnapshots = new Map<string, RepositorySnapshot>()
   private seenMergeKeys = new Set<string>()
   private scores: TeamScore[] = createEmptyScores()
   private syncError: string | null = null
@@ -140,16 +148,28 @@ export class MergePoller {
     }
 
     const runtimeState = await loadRuntimeState(this.runtimeStateFile)
-    this.defaultBranches = await this.client.fetchRepositoryDefaults()
+    const repositorySnapshots = await this.client.fetchRepositorySnapshots(MERGE_RACE_START_AT)
+    this.defaultBranches = getDefaultBranches(repositorySnapshots)
     const pullRequests = await this.client.fetchMergedPullRequests(MERGE_RACE_START_AT)
     const allValidMerges = selectValidMerges(pullRequests, this.defaultBranches)
 
-    this.mergeById = new Map(allValidMerges.map((merge) => [merge.id, merge]))
-    this.scores = calculateScores(allValidMerges)
     const bootstrapState = prepareBootstrap(allValidMerges, runtimeState)
+    let notificationMerges = bootstrapState.notificationMerges
+    if (runtimeState && notificationMerges.length > 0) {
+      const recoverySince = runtimeState.lastSuccessfulPollAt ?? runtimeState.initializedAt
+      const recoverySnapshots = await this.client.fetchRepositorySnapshots(recoverySince)
+      notificationMerges = applyRepositoryCommitDeltas(
+        notificationMerges,
+        new Map(),
+        recoverySnapshots,
+      )
+    }
+
+    this.repositorySnapshots = repositorySnapshots
+    this.scores = calculateScores(repositorySnapshots)
     this.latestSequence = bootstrapState.latestSequence
     this.initializedAt = runtimeState?.initializedAt ?? new Date().toISOString()
-    this.appendEvents(bootstrapState.notificationMerges)
+    this.appendEvents(notificationMerges)
     this.seenMergeKeys = bootstrapState.seenMergeKeys
     this.lastSuccessfulPollAt = new Date().toISOString()
     await this.persistRuntimeState()
@@ -164,6 +184,8 @@ export class MergePoller {
       Date.parse(MERGE_RACE_START_AT),
       (this.lastSuccessfulPollAt ? Date.parse(this.lastSuccessfulPollAt) : Date.now()) - MERGE_LOOKBACK_MS,
     )
+    const observedSnapshots = await this.client.fetchRepositorySnapshots(MERGE_RACE_START_AT)
+    this.defaultBranches = getDefaultBranches(observedSnapshots)
     const pullRequests = await this.client.fetchMergedPullRequests(new Date(pollFrom).toISOString())
     const newMerges = selectValidMerges(
       pullRequests,
@@ -171,12 +193,28 @@ export class MergePoller {
       this.seenMergeKeys,
     )
 
-    newMerges.forEach((merge) => {
-      this.mergeById.set(merge.id, merge)
-      this.seenMergeKeys.add(merge.id)
-    })
-    this.appendEvents(newMerges)
-    this.scores = calculateScores([...this.mergeById.values()])
+    if (newMerges.length > 0) {
+      const latestSnapshots = await this.client.fetchRepositorySnapshots(MERGE_RACE_START_AT)
+      this.defaultBranches = getDefaultBranches(latestSnapshots)
+      if (!haveAffectedCommitCountsAdvanced(
+        newMerges,
+        this.repositorySnapshots,
+        latestSnapshots,
+      )) {
+        return
+      }
+
+      const scoredMerges = applyRepositoryCommitDeltas(
+        newMerges,
+        this.repositorySnapshots,
+        latestSnapshots,
+      )
+      scoredMerges.forEach((merge) => this.seenMergeKeys.add(merge.id))
+      this.appendEvents(scoredMerges)
+      this.repositorySnapshots = latestSnapshots
+      this.scores = calculateScores(latestSnapshots)
+    }
+
     this.lastSuccessfulPollAt = new Date().toISOString()
     await this.persistRuntimeState()
   }

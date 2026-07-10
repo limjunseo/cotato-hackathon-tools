@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { calculateScores, selectValidMerges } from './score-engine'
-import type { RawMergedPullRequest } from './types'
+import {
+  applyRepositoryCommitDeltas,
+  calculateScores,
+  haveAffectedCommitCountsAdvanced,
+  selectValidMerges,
+} from './score-engine'
+import type { RawMergedPullRequest, RepositorySnapshot } from './types'
 
 const defaults = new Map([
   ['8th-COKERTHON/client-team3', 'main'],
@@ -11,7 +16,6 @@ const defaults = new Map([
 function pullRequest(overrides: Partial<RawMergedPullRequest> = {}): RawMergedPullRequest {
   return {
     baseRefName: 'main',
-    commitCount: 3,
     mergedAt: '2026-07-10T11:00:00.000Z',
     number: 12,
     repositoryFullName: '8th-COKERTHON/client-team3',
@@ -26,14 +30,22 @@ describe('merge score engine', () => {
       pullRequest(),
       pullRequest({
         baseRefName: 'develop',
-        commitCount: 5,
         number: 7,
         repositoryFullName: '8th-COKERTHON/server-team3',
       }),
     ], defaults)
 
     expect(merges).toHaveLength(2)
-    expect(calculateScores(merges)).toContainEqual(expect.objectContaining({
+    expect(merges.every((merge) => merge.commitCount === 0)).toBe(true)
+  })
+
+  it('calculates scores from actual default branch commit snapshots', () => {
+    const snapshots = new Map<string, RepositorySnapshot>([
+      ['8th-COKERTHON/client-team3', { commitCount: 3, defaultBranch: 'main' }],
+      ['8th-COKERTHON/server-team3', { commitCount: 5, defaultBranch: 'develop' }],
+    ])
+
+    expect(calculateScores(snapshots)).toContainEqual(expect.objectContaining({
       teamId: 3,
       client: 3,
       server: 5,
@@ -53,15 +65,33 @@ describe('merge score engine', () => {
     expect(merges).toEqual([])
   })
 
-  it('counts multiple teams found in the same poll without collapsing same-team merges', () => {
+  it('distributes each repository commit delta without double-counting multiple merges', () => {
     const merges = selectValidMerges([
-      pullRequest({ commitCount: 2, number: 1 }),
-      pullRequest({ commitCount: 4, number: 2 }),
-      pullRequest({ commitCount: 7, number: 5, repositoryFullName: '8th-COKERTHON/client-team5' }),
+      pullRequest({ number: 1 }),
+      pullRequest({ number: 2 }),
+      pullRequest({ number: 5, repositoryFullName: '8th-COKERTHON/client-team5' }),
     ], defaults)
-    const scores = calculateScores(merges)
+    const previous = new Map<string, RepositorySnapshot>([
+      ['8th-COKERTHON/client-team3', { commitCount: 10, defaultBranch: 'main' }],
+      ['8th-COKERTHON/client-team5', { commitCount: 8, defaultBranch: 'main' }],
+    ])
+    const next = new Map<string, RepositorySnapshot>([
+      ['8th-COKERTHON/client-team3', { commitCount: 15, defaultBranch: 'main' }],
+      ['8th-COKERTHON/client-team5', { commitCount: 10, defaultBranch: 'main' }],
+    ])
+    const scoredMerges = applyRepositoryCommitDeltas(merges, previous, next)
 
-    expect(scores).toContainEqual(expect.objectContaining({ teamId: 3, total: 6 }))
-    expect(scores).toContainEqual(expect.objectContaining({ teamId: 5, total: 7 }))
+    expect(scoredMerges.map((merge) => merge.commitCount)).toEqual([3, 2, 2])
+    expect(scoredMerges.reduce((total, merge) => total + merge.commitCount, 0)).toBe(7)
+    expect(haveAffectedCommitCountsAdvanced(merges, previous, next)).toBe(true)
+  })
+
+  it('waits when GitHub search sees a merge before branch history advances', () => {
+    const merges = selectValidMerges([pullRequest()], defaults)
+    const snapshots = new Map<string, RepositorySnapshot>([
+      ['8th-COKERTHON/client-team3', { commitCount: 10, defaultBranch: 'main' }],
+    ])
+
+    expect(haveAffectedCommitCountsAdvanced(merges, snapshots, snapshots)).toBe(false)
   })
 })

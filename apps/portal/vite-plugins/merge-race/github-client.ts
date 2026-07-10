@@ -1,5 +1,5 @@
 import { MERGE_RACE_ORGANIZATION } from './team-config'
-import type { RateLimitState, RawMergedPullRequest } from './types'
+import type { RateLimitState, RawMergedPullRequest, RepositorySnapshot } from './types'
 
 const GITHUB_GRAPHQL_URL = 'https://api.github.com/graphql'
 
@@ -84,39 +84,52 @@ export class GitHubMergeClient {
     return payload.data
   }
 
-  async fetchRepositoryDefaults() {
+  async fetchRepositorySnapshots(since: string) {
     const data = await this.execute<RateLimitResponse & {
       organization: {
         repositories: {
           nodes: Array<{
-            defaultBranchRef: { name: string } | null
+            defaultBranchRef: {
+              name: string
+              target: { history: { totalCount: number } } | null
+            } | null
             nameWithOwner: string
           }>
         }
       } | null
     }>(`
-      query MergeRaceRepositories($organization: String!) {
+      query CommitRaceRepositories($organization: String!, $since: GitTimestamp!) {
         organization(login: $organization) {
           repositories(first: 100, orderBy: { field: NAME, direction: ASC }) {
             nodes {
               nameWithOwner
-              defaultBranchRef { name }
+              defaultBranchRef {
+                name
+                target {
+                  ... on Commit {
+                    history(since: $since) { totalCount }
+                  }
+                }
+              }
             }
           }
         }
         rateLimit { cost remaining resetAt }
       }
-    `, { organization: MERGE_RACE_ORGANIZATION })
+    `, { organization: MERGE_RACE_ORGANIZATION, since })
 
     this.lastRateLimit = data.rateLimit
     if (!data.organization) {
       throw new GitHubClientError(`Organization ${MERGE_RACE_ORGANIZATION} was not found.`)
     }
 
-    return new Map(
+    return new Map<string, RepositorySnapshot>(
       data.organization.repositories.nodes.flatMap((repository) => (
-        repository.defaultBranchRef
-          ? [[repository.nameWithOwner, repository.defaultBranchRef.name] as const]
+        repository.defaultBranchRef?.target
+          ? [[repository.nameWithOwner, {
+              commitCount: repository.defaultBranchRef.target.history.totalCount,
+              defaultBranch: repository.defaultBranchRef.name,
+            }] as const]
           : []
       )),
     )
@@ -134,7 +147,6 @@ export class GitHubMergeClient {
         search: {
           nodes: Array<{
             baseRefName: string
-            commits: { totalCount: number }
             mergedAt: string | null
             number: number
             repository: { nameWithOwner: string }
@@ -150,7 +162,6 @@ export class GitHubMergeClient {
                 number
                 mergedAt
                 baseRefName
-                commits { totalCount }
                 url
                 repository { nameWithOwner }
               }
@@ -169,7 +180,6 @@ export class GitHubMergeClient {
 
         return [{
           baseRefName: pullRequest.baseRefName,
-          commitCount: pullRequest.commits.totalCount,
           mergedAt: pullRequest.mergedAt,
           number: pullRequest.number,
           repositoryFullName: pullRequest.repository.nameWithOwner,

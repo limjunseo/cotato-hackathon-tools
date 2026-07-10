@@ -37,7 +37,7 @@ Commit Race 단독 주소: `http://127.0.0.1:4176`
 
 ## 실시간 Commit Race
 
-루트 `.env.local`에 서버 전용 GitHub token을 설정하면 포털 Vite 서버가 `8th-COKERTHON`의 merge를 5초마다 확인합니다. 신규 merge가 트리거되면 해당 PR에 포함된 커밋 수가 팀 점수와 순위에 반영됩니다.
+루트 `.env.local`에 서버 전용 GitHub token을 설정하면 포털 Vite 서버가 `8th-COKERTHON`의 merge를 5초마다 확인합니다. 신규 merge가 트리거되면 행사 시작 이후 각 저장소 default branch의 실제 커밋 수가 팀 점수와 순위에 반영됩니다.
 
 ```dotenv
 GITHUB_TOKEN=github_pat_...

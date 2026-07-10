@@ -6,7 +6,7 @@ import type { RuntimeState } from './types'
 function merge(id: string): ValidMerge {
   return {
     baseRefName: 'main',
-    commitCount: 3,
+    commitCount: 0,
     id,
     mergedAt: '2026-07-11T00:00:00.000Z',
     prNumber: 1,
