@@ -139,7 +139,7 @@ export function playRaceMusic(): RaceMusicSession | null {
   const context = new AudioContextClass()
   const master = context.createGain()
   master.gain.setValueAtTime(0.0001, context.currentTime)
-  master.gain.exponentialRampToValueAtTime(0.075, context.currentTime + 0.08)
+  master.gain.exponentialRampToValueAtTime(0.35, context.currentTime + 0.08)
   master.connect(context.destination)
   void context.resume().catch(() => undefined)
 

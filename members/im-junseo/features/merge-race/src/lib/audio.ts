@@ -33,7 +33,7 @@ function createOutput() {
   const context = audioWindow.__cotatoMergeAudioContext ?? new AudioContextClass()
   audioWindow.__cotatoMergeAudioContext = context
   const output = context.createGain()
-  output.gain.value = 0.09
+  output.gain.value = 0.40
   output.connect(context.destination)
   void context.resume().catch(() => undefined)
 
