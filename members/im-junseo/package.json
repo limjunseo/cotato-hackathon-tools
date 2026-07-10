@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@cotato/contracts": "workspace:*",
+    "@cotato/hackathon-awards": "workspace:*",
     "@cotato/hackathon-timer": "workspace:*",
     "@cotato/lucky-potato-draw": "workspace:*",
     "@cotato/merge-race": "workspace:*",

@@ -68,6 +68,9 @@ importers:
       '@cotato/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@cotato/hackathon-awards':
+        specifier: workspace:*
+        version: link:features/hackathon-awards
       '@cotato/hackathon-timer':
         specifier: workspace:*
         version: link:features/hackathon-timer
@@ -87,6 +90,52 @@ importers:
       typescript:
         specifier: ~6.0.2
         version: 6.0.3
+
+  members/im-junseo/features/hackathon-awards:
+    dependencies:
+      '@cotato/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@types/node':
+        specifier: ^24.13.2
+        version: 24.13.2
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.3
+        version: 6.0.3(vite@8.1.3(@types/node@24.13.2))
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
+      oxlint:
+        specifier: ^1.71.0
+        version: 1.72.0
+      typescript:
+        specifier: ~6.0.2
+        version: 6.0.3
+      vite:
+        specifier: ^8.1.1
+        version: 8.1.3(@types/node@24.13.2)
+      vitest:
+        specifier: ^4.1.9
+        version: 4.1.9(@types/node@24.13.2)(jsdom@29.1.1)(vite@8.1.3(@types/node@24.13.2))
 
   members/im-junseo/features/hackathon-timer:
     dependencies:
